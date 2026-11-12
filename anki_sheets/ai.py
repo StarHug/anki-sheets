@@ -1,0 +1,302 @@
+"""AI features for Sheets: Condense (cheat-sheet block for a section) and Ask.
+
+No GUI imports. Requests go straight from this computer to the provider the
+user configured; nothing here runs unless the user clicks Condense or sends a
+question.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import urllib.error
+import urllib.request
+from typing import Any
+
+DEFAULT_AI: dict[str, Any] = {
+    "enabled": False,
+    "provider": "anthropic",  # or "openai_compatible" (also local models, e.g. Ollama)
+    "api_key": "",
+    "model": "",
+    "base_url": "",
+    "max_cards": 200,
+    "never_send_decks": [],
+}
+DEFAULT_MODELS = {"anthropic": "claude-sonnet-5-5", "openai_compatible": ""}
+ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+
+
+class AIError(Exception):
+    pass
+
+
+def merged(ai_cfg: dict | None) -> dict:
+    return {**DEFAULT_AI, **(ai_cfg or {})}
+
+
+def ready(ai_cfg: dict) -> bool:
+    c = merged(ai_cfg)
+    if not c["enabled"]:
+        return False
+    if c["provider"] == "anthropic":
+        return bool(c["api_key"])
+    return bool(c["base_url"] and c["model"])  # local models need no key
+
+
+# ---------------------------------------------------------------- transport
+
+
+def _post(url: str, headers: dict, body: dict, timeout: int = 90) -> dict:
+    req = urllib.request.Request(
+        url, data=json.dumps(body).encode(), headers={"content-type": "application/json", **headers}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="replace")[:300]
+        try:
+            err = json.loads(detail).get("error")
+            detail = err.get("message", detail) if isinstance(err, dict) else (err or detail)
+        except Exception:
+            pass
+        hint = " Check the API key in AI settings." if e.code in (401, 403) else ""
+        raise AIError("The AI service answered %d: %s%s" % (e.code, detail, hint)) from None
+    except (urllib.error.URLError, OSError) as e:
+        raise AIError("Couldn't reach the AI service (%s)." % getattr(e, "reason", e)) from None
+
+
+def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int = 2000) -> str:
+    c = merged(ai_cfg)
+    model = c["model"] or DEFAULT_MODELS.get(c["provider"], "")
+    if c["provider"] == "anthropic":
+        out = _post(
+            c["base_url"] or ANTHROPIC_URL,
+            {"x-api-key": c["api_key"], "anthropic-version": "2023-06-01"},
+            {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages},
+        )
+        return "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
+    headers = {"authorization": "Bearer " + c["api_key"]} if c["api_key"] else {}
+    out = _post(
+        c["base_url"].rstrip("/") + "/chat/completions",
+        headers,
+        {"model": model, "max_tokens": max_tokens,
+         "messages": [{"role": "system", "content": system}] + messages},
+    )
+    try:
+        return out["choices"][0]["message"]["content"] or ""
+    except (KeyError, IndexError, TypeError):
+        raise AIError("The AI service sent a reply this add-on couldn't read.") from None
+
+
+def parse_json(text: str) -> dict:
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end <= start:
+        raise AIError("The AI didn't return a usable answer. Try again.")
+    try:
+        out = json.loads(text[start : end + 1])
+    except ValueError:
+        raise AIError("The AI didn't return a usable answer. Try again.") from None
+    if not isinstance(out, dict):
+        raise AIError("The AI didn't return a usable answer. Try again.")
+    return out
+
+
+# ---------------------------------------------------------------- prompts
+
+
+def cards_block(cards: list[tuple[int, str]]) -> str:
+    return "\n".join("[%d] %s" % (i + 1, text) for i, (_, text) in enumerate(cards))
+
+
+CONDENSE_SYSTEM = """You turn a set of flashcards about one topic into a compact cheat-sheet block, the notes someone would have written before making the cards.
+
+Rules:
+- Use ONLY facts stated in the cards. Never add outside knowledge, even if the cards are incomplete.
+- Start with "intro": one plain sentence saying what the topic is, so a reader with no context knows what they are looking at.
+- Then 1 or 2 "blocks". Pick the layout that fits the cards:
+  - "table": parallel items that share the same properties (layers, types, options), or two things being compared. First column names the item.
+  - "steps": a sequence or process, in order.
+  - "list": principles, rules or standalone points. Start each with a short **bold lead phrase**.
+- Keep every cell and item short (under 15 words). No filler.
+- "sources": the card numbers each row or item came from. Cover every card somewhere if you can.
+- "gaps": things the cards themselves name but never explain (for example a list names seven items and only four have their own card). Empty list if none.
+- If the cards are unrelated facts with no shared structure, return {"condensable": false, "reason": "<one short sentence>"} and nothing else.
+
+Return ONLY JSON in this shape:
+{"condensable": true, "intro": "...", "blocks": [{"type": "table", "columns": ["...", "..."], "rows": [{"cells": ["...", "..."], "sources": [1, 2]}]}, {"type": "steps", "items": [{"text": "...", "sources": [3]}]}, {"type": "list", "items": [{"text": "**Lead.** ...", "sources": [4]}]}], "gaps": ["..."]}"""
+
+ASK_SYSTEM = """You answer questions about the user's own flashcards, listed below with numbers.
+
+Rules:
+- Answer from the cards whenever they cover the question. Put the card numbers you used in "sources" and set "basis" to "cards".
+- %s
+- Keep answers short and plain: at most 90 words, no headings. **Bold** is allowed for key terms.
+- Never invent what a card says.
+
+Return ONLY JSON: {"answer": "...", "basis": "cards" | "general" | "none", "sources": [1, 2]}"""
+
+ASK_STRICT = 'If the cards do not cover it, do NOT use outside knowledge: set "basis" to "none" and say the cards don\'t cover this, naming the closest card topic if there is one.'
+ASK_OPEN = 'If the cards do not cover it, answer briefly from general knowledge and set "basis" to "general" with empty "sources". If only part of the answer is in the cards, use "general" and say which part goes beyond the cards.'
+
+
+# ---------------------------------------------------------------- features
+
+
+def _nids(sources: Any, cards: list[tuple[int, str]]) -> list[int]:
+    out = []
+    for s in sources if isinstance(sources, list) else []:
+        if isinstance(s, int) and not isinstance(s, bool) and 1 <= s <= len(cards) and cards[s - 1][0] not in out:
+            out.append(cards[s - 1][0])
+    return out
+
+
+def _s(v: Any) -> str:
+    return v.strip() if isinstance(v, str) else ("" if v is None else str(v))
+
+
+def normalize_summary(raw: dict, cards: list[tuple[int, str]]) -> dict:
+    """Validate the model's JSON so the page only ever renders known shapes."""
+    if raw.get("condensable") is False:
+        return {"condensable": False, "reason": _s(raw.get("reason")) or "These cards don't share a structure to summarise."}
+    blocks = []
+    for b in raw.get("blocks") if isinstance(raw.get("blocks"), list) else []:
+        if not isinstance(b, dict):
+            continue
+        kind = b.get("type")
+        if kind == "table":
+            cols = [_s(c) for c in b.get("columns", []) if _s(c)][:6]
+            rows = []
+            for r in b.get("rows", []) if isinstance(b.get("rows"), list) else []:
+                if isinstance(r, dict) and isinstance(r.get("cells"), list) and cols:
+                    cells = ([_s(c) for c in r["cells"]] + [""] * len(cols))[: len(cols)]
+                    if any(cells):
+                        rows.append({"cells": cells, "sources": _nids(r.get("sources"), cards)})
+            if cols and rows:
+                blocks.append({"type": "table", "columns": cols, "rows": rows})
+        elif kind in ("steps", "list"):
+            items = [
+                {"text": _s(i.get("text")), "sources": _nids(i.get("sources"), cards)}
+                for i in (b.get("items") if isinstance(b.get("items"), list) else [])
+                if isinstance(i, dict) and _s(i.get("text"))
+            ]
+            if items:
+                blocks.append({"type": kind, "items": items})
+    if not blocks:
+        raise AIError("The AI didn't return a usable summary. Try again.")
+    gaps = [_s(g) for g in raw.get("gaps", []) if _s(g)] if isinstance(raw.get("gaps"), list) else []
+    return {"condensable": True, "intro": _s(raw.get("intro")), "blocks": blocks[:2], "gaps": gaps[:8]}
+
+
+def condense(ai_cfg: dict, title: str, cards: list[tuple[int, str]]) -> dict:
+    user = "Topic label: %s\n\nCards:\n%s" % (title, cards_block(cards))
+    text = call_model(ai_cfg, CONDENSE_SYSTEM, [{"role": "user", "content": user}], 2500)
+    out = normalize_summary(parse_json(text), cards)
+    out["count"] = len(cards)
+    return out
+
+
+def ask(ai_cfg: dict, title: str, cards: list[tuple[int, str]], history: list[dict],
+        question: str, strict: bool) -> dict:
+    system = ASK_SYSTEM % (ASK_STRICT if strict else ASK_OPEN)
+    system += "\n\nSheet: %s\n\nCards:\n%s" % (title, cards_block(cards))
+    messages = []
+    for turn in history[-6:]:
+        if turn.get("role") in ("user", "assistant") and _s(turn.get("text")):
+            messages.append({"role": turn["role"], "content": _s(turn["text"])})
+    messages.append({"role": "user", "content": question})
+    raw = parse_json(call_model(ai_cfg, system, messages, 900))
+    basis = raw.get("basis") if raw.get("basis") in ("cards", "general", "none") else "cards"
+    if strict and basis == "general":
+        basis = "none"
+    answer = _s(raw.get("answer"))
+    if not answer:
+        raise AIError("The AI didn't return a usable answer. Try again.")
+    return {"answer": answer, "basis": basis,
+            "sources": _nids(raw.get("sources"), cards) if basis == "cards" else []}
+
+
+def test_connection(ai_cfg: dict) -> str:
+    """One tiny request with no card content, to check the key and address."""
+    c = merged(ai_cfg)
+    if c["provider"] == "anthropic" and not c["api_key"]:
+        raise AIError("Paste an API key first.")
+    if c["provider"] != "anthropic" and not (c["base_url"] and c["model"]):
+        raise AIError("Fill in the server address and model first.")
+    reply = call_model(c, "Reply with the single word OK.", [{"role": "user", "content": "ping"}], 16)
+    if not reply.strip():
+        raise AIError("The AI service answered, but with an empty reply.")
+    return reply.strip()[:60]
+
+
+# ---------------------------------------------------------------- saved summaries
+
+
+def fingerprint(pairs: list[tuple[int, int]]) -> str:
+    """Changes when any card in the section is added, removed or edited."""
+    return hashlib.sha1(json.dumps(sorted(pairs)).encode()).hexdigest()[:16]
+
+
+class SummaryStore:
+    """Summaries live in the add-on's user_files folder, not in the collection,
+    so they never touch cards, scheduling or sync."""
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        try:
+            with open(path, encoding="utf-8") as f:
+                self.data = json.load(f)
+        except (OSError, ValueError):
+            self.data = {}
+
+    def _save(self) -> None:
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, ensure_ascii=False)
+        os.replace(tmp, self.path)
+
+    def get(self, key: str) -> dict | None:
+        return self.data.get(key)
+
+    def set(self, key: str, summary: dict, fp: str) -> None:
+        self.data[key] = {"summary": summary, "fp": fp}
+        self._save()
+
+    def delete(self, key: str) -> None:
+        if self.data.pop(key, None) is not None:
+            self._save()
+
+
+class TickStore:
+    """Review ticks: a personal checklist kept in the add-on's user_files.
+    Never written to the collection, so scheduling and sync are untouched."""
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        try:
+            with open(path, encoding="utf-8") as f:
+                self.ids = {int(n) for n in json.load(f)}
+        except (OSError, ValueError, TypeError):
+            self.ids = set()
+
+    def _save(self) -> None:
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(sorted(self.ids), f)
+        os.replace(tmp, self.path)
+
+    def set(self, nid: int, on: bool) -> None:
+        before = len(self.ids)
+        (self.ids.add if on else self.ids.discard)(int(nid))
+        if len(self.ids) != before:
+            self._save()
+
+    def reset(self, nids: list[int]) -> int:
+        hit = self.ids & {int(n) for n in nids}
+        if hit:
+            self.ids -= hit
+            self._save()
+        return len(hit)

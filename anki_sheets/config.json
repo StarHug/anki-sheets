@@ -1,0 +1,30 @@
+{
+  "max_rows": 500,
+  "max_chars": 1500000,
+  "weak_lapses": 2,
+  "group_tag_prefixes": [
+    "topic",
+    "subtopic",
+    "chapter",
+    "section",
+    "person"
+  ],
+  "ignore_tag_prefixes": [
+    "src",
+    "source",
+    "use",
+    "kind",
+    "level",
+    "type"
+  ],
+  "note_types": {},
+  "ai": {
+    "enabled": false,
+    "provider": "anthropic",
+    "api_key": "",
+    "model": "",
+    "base_url": "",
+    "max_cards": 200,
+    "never_send_decks": []
+  }
+}

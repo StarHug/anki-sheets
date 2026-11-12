@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect width="1280" height="320" fill="#fbf8f1"/>
+  <rect x="0" y="312" width="1280" height="8" fill="#1f3fa8"/>
+  <g transform="translate(96 60) scale(0.39)">
+    <rect width="512" height="512" rx="112" fill="#1f3fa8"/>
+    <rect x="112" y="92" width="264" height="340" rx="28" fill="#fbf8f1"/>
+    <g fill="#1f3fa8"><rect x="144" y="150" width="78" height="18" rx="9"/><rect x="144" y="214" width="78" height="18" rx="9"/><rect x="144" y="278" width="78" height="18" rx="9"/><rect x="144" y="342" width="78" height="18" rx="9"/></g>
+    <g fill="#b9c3de"><rect x="244" y="150" width="100" height="18" rx="9"/><rect x="244" y="214" width="100" height="18" rx="9"/><rect x="244" y="278" width="100" height="18" rx="9"/><rect x="244" y="342" width="72" height="18" rx="9"/></g>
+    <rect x="231" y="132" width="4" height="246" rx="2" fill="#e3ddcf"/>
+    <path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/>
+  </g>
+  <text x="344" y="150" font-size="92" font-weight="800" fill="#16233f" letter-spacing="-2">Sheets</text>
+  <text x="348" y="206" font-size="34" font-weight="500" fill="#3c4a68">Read a whole Anki deck as a cheat sheet</text>
+  <text x="348" y="252" font-size="24" font-weight="500" fill="#7a8399">Skim what's due · test yourself · print or save as PDF</text>
+</svg>

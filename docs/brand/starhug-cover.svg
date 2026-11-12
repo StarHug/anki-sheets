@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect width="1200" height="400" fill="#1f3fa8"/>
+  <g fill="#ffc94a" opacity="0.9">
+    <path d="M1040 70 C1044 96 1050 102 1076 106 C1050 110 1044 116 1040 142 C1036 116 1030 110 1004 106 C1030 102 1036 96 1040 70 Z"/>
+    <path d="M1120 180 C1122 194 1126 198 1140 200 C1126 202 1122 206 1120 220 C1118 206 1114 202 1100 200 C1114 198 1118 194 1120 180 Z" opacity="0.7"/>
+    <path d="M960 250 C962 262 965 265 977 267 C965 269 962 272 960 284 C958 272 955 269 943 267 C955 265 958 262 960 250 Z" opacity="0.55"/>
+    <path d="M140 60 C142 72 145 75 157 77 C145 79 142 82 140 94 C138 82 135 79 123 77 C135 75 138 72 140 60 Z" opacity="0.5"/>
+  </g>
+  <text x="600" y="168" text-anchor="middle" font-size="96" font-weight="800" fill="#fbf8f1" letter-spacing="-2">StarHug</text>
+  <text x="600" y="222" text-anchor="middle" font-size="32" font-weight="500" fill="#d5dcf2">Small, useful apps from a solo developer</text>
+  <g transform="translate(376 262)">
+    <rect width="448" height="64" rx="32" fill="#fbf8f1"/>
+    <g transform="translate(14 10) scale(0.086)">
+      <rect width="512" height="512" rx="112" fill="#1f3fa8"/>
+      <rect x="112" y="92" width="264" height="340" rx="28" fill="#fbf8f1"/>
+      <g fill="#1f3fa8"><rect x="144" y="150" width="78" height="18" rx="9"/><rect x="144" y="214" width="78" height="18" rx="9"/><rect x="144" y="278" width="78" height="18" rx="9"/><rect x="144" y="342" width="78" height="18" rx="9"/></g>
+      <g fill="#b9c3de"><rect x="244" y="150" width="100" height="18" rx="9"/><rect x="244" y="214" width="100" height="18" rx="9"/><rect x="244" y="278" width="100" height="18" rx="9"/><rect x="244" y="342" width="72" height="18" rx="9"/></g>
+      <path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/>
+    </g>
+    <text x="72" y="41" font-size="24" font-weight="600" fill="#16233f">First release: Sheets for Anki</text>
+  </g>
+</svg>

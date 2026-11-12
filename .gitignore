@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+anki_sheets/user_files/summaries.json
+anki_sheets/meta.json
+anki_sheets/user_files/ticks.json
