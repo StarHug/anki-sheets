@@ -22,7 +22,7 @@ Bugs and ideas: https://github.com/StarHug/anki-sheets/issues
 
 Sheets is free. If it saves you time and you'd like to help cover the cost of maintaining it, you can buy me a coffee:
 
-<a href="https://ko-fi.com/starsight"><img height="36" src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" alt="Buy me a coffee at ko-fi.com"></a>
+<a href="https://ko-fi.com/starsight"><img height="54" src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" alt="Buy me a coffee at ko-fi.com"></a>
 
 ## Licence
 
