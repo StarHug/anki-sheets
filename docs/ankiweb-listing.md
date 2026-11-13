@@ -62,7 +62,7 @@ Please don't use reviews for bug reports: I'm not notified of them and can't rep
 
 **Source and licence**
 
-The source code is on [GitHub](https://github.com/StarHug/anki-sheets). Licensed under AGPL-3.0-or-later with additional terms: copies and forks must keep the credit and support link, and must not claim to be the original.
+The source code is on [GitHub](https://github.com/StarHug/anki-sheets). Open source under AGPL-3.0-or-later; see the LICENSE file for the terms that apply to copies and forks.
 
 **Support this add-on**
 
