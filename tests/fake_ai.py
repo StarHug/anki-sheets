@@ -103,6 +103,8 @@ class Handler(BaseHTTPRequestHandler):
             out = answer(body["system"], body["messages"])
             return self._send(200, {"content": [{"type": "text", "text": "Here you go:\n" + json.dumps(out)}]})
         if self.path.endswith("/chat/completions"):
+            if body.get("model") == "newer" and "max_tokens" in body:
+                return self._send(400, {"error": {"message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead."}})
             msgs = body["messages"]
             out = answer(msgs[0]["content"], msgs[1:])
             return self._send(200, {"choices": [{"message": {"role": "assistant", "content": json.dumps(out)}}]})

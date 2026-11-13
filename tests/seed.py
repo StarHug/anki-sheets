@@ -170,7 +170,44 @@ def _shot_pixel(x, y):
     return (24, 26, 31)
 
 
-def seed(path: str, extras: bool = False) -> Collection:
+STRESS = "Stress::Long cards"
+
+
+def _nest(items):
+    """A bullet list nested one level per item, the shape outline-style notes export to."""
+    html = ""
+    for it in reversed(items):
+        html = "<ul><li>%s%s</li></ul>" % (it, html)
+    return html
+
+
+def stress_notes():
+    """Awkward card shapes for print: headings as questions, deep lists, long words, wide tables."""
+    deep = _nest(["Spanish has two verbs for <b>to be</b>", "<b>ser</b> describes what something is",
+                  "and <b>consists of</b> identity, origin, profession and time",
+                  "while <b>estar</b> covers location and temporary states of a person or thing",
+                  "which is why <i>es aburrido</i> and <i>está aburrido</i> mean different things",
+                  "boring as a trait versus bored right now, a distinction English leaves to context"])
+    table = ("<table border=1><tr>" + "".join("<th>%s</th>" % h for h in
+             ("Pronoun", "Present", "Preterite", "Imperfect", "Future", "Conditional", "Subjunctive", "Imperative")) + "</tr>"
+             + "".join("<tr>" + "".join("<td>%s</td>" % c for c in row) + "</tr>" for row in (
+                 ("yo", "hablo", "hablé", "hablaba", "hablaré", "hablaría", "hable", "-"),
+                 ("tú", "hablas", "hablaste", "hablabas", "hablarás", "hablarías", "hables", "habla"),
+                 ("nosotros", "hablamos", "hablamos", "hablábamos", "hablaremos", "hablaríamos", "hablemos", "hablemos"))) + "</table>")
+    long_word = "https://example.com/" + "conjugaciones-irregulares-" * 9 + "fin"
+    tall = "<ol>" + "".join("<li>Step %d: say the sentence aloud, then write it once from memory and check the accents.</li>" % i
+                            for i in range(1, 61)) + "</ol>"
+    out = []
+    for i in range(1, 13):
+        out.append(("<h1>Unit %d key takeaway</h1>" % i, deep))
+        out.append(("<h2>What is the difference between ser and estar when describing a person (set %d)?</h2>" % i, deep + deep))
+        out.append(("Full conjugation table for <b>hablar</b>, set %d" % i, table))
+        out.append(("Where is the long reference link for set %d?" % i, long_word))
+    out.insert(9, ("<h2>Practice routine that is taller than one page</h2>", tall))
+    return out
+
+
+def seed(path: str, extras: bool = False, stress: bool = False) -> Collection:
     col = Collection(path)
     mm = col.models
 
@@ -244,6 +281,10 @@ def seed(path: str, extras: bool = False) -> Collection:
         for n in (1, 2, 3):
             add("Image Occlusion Enhanced", ANATOMY, ["abc-%d" % n, "Layers of the skin", IMG,
                 '<img src="mask-q%d.svg">' % n, "", '<img src="mask-a%d.svg">' % n, '<img src="mask-o.svg">'], [])
+
+    if stress:  # only for the print checks, so the usual sample counts stay the same
+        for front, back in stress_notes():
+            add("Basic", STRESS, [front, back], [])
 
     # review history: two cards that keep lapsing, some already reviewed
     today = col.sched.today

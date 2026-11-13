@@ -23,7 +23,7 @@ pm.profile["syncMedia"] = False
 pm.save()
 from seed import seed
 os.makedirs(os.path.join("'$BASE'".strip("'"), "User 1"), exist_ok=True)
-seed(os.path.join("$BASE", "User 1", "collection.anki2"), extras=os.environ.get("SEED_EXTRAS") == "1").close()
+seed(os.path.join("$BASE", "User 1", "collection.anki2"), extras=os.environ.get("SEED_EXTRAS") == "1", stress=os.environ.get("SEED_STRESS") == "1").close()
 E
 echo software > "$BASE/gldriver6"
 cp -r "$ROOT/anki_sheets" "$BASE/addons21/anki_sheets"

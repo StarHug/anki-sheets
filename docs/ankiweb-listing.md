@@ -76,6 +76,8 @@ Thank you!
 
 **Changelog**
 
+1.0.2: drag the edge of the deck list to widen it (double-click to reset). Deck search shows each deck's own name first. AI settings has ready-made choices for OpenAI, Gemini, OpenRouter, Ollama and LM Studio. Buttons keep their shape when a theme add-on restyles Anki. PDF export fixed for long cards: no cut-off lists, oversized headings, printed scrollbars or blank pages.
+
 1.0.1: the Sheets logo now shows beside the name in the app. New sample screenshots.
 
 1.0.0: first public release.

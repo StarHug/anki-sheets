@@ -109,7 +109,7 @@ class Driver:
             QTest.mouseClick(self.target, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pos)
         yield 220 + pause
 
-    def drag(self, selector, dx):
+    def drag(self, selector, dx, cursor=True):
         pos = yield from self.point(selector)
         if pos is None:
             return
@@ -119,7 +119,8 @@ class Driver:
         p = pos
         for i in range(1, 15):
             p = QPoint(int(pos.x() + dx * i / 14), pos.y())
-            QCursor.setPos(self.target.mapToGlobal(p))
+            if cursor:  # the on-screen pointer, for the recording; it reports no button held
+                QCursor.setPos(self.target.mapToGlobal(p))
             QTest.mouseMove(self.target, p)
             yield 45
         QTest.mouseRelease(self.target, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, p)
@@ -199,6 +200,22 @@ class Driver:
         yield from self.drag(".group:nth-child(1) .row:nth-child(1) .split", -110)
         kept = yield from self.qw()
 
+        # 3b. drag the deck list wider, double-click to reset, and search shows the deck's own name first
+        W = "Math.round(document.querySelector('.side').getBoundingClientRect().width)"
+        w0 = yield from self.js(W)
+        yield from self.drag(".sidegrip", 150, cursor=False)
+        w1 = yield from self.js(W)
+        saved = yield from self.js("Sheets.state.view.side")
+        log("dragging the deck list's edge widens it", w0 == 264 and 400 <= w1 <= 430 and saved == w1, [w0, w1, saved])
+        yield from self.click(".sidegrip", 1200, double=True)
+        w2 = yield from self.js(W)
+        log("double-clicking the edge resets the deck list", w2 == 264, w2)
+        yield from self.js("var i=document.querySelector('.side input'); i.value='partic'; i.dispatchEvent(new Event('input')); 1")
+        yield 400
+        hit = yield from self.js("var d=document.querySelector('.tree ul .dk span'); JSON.stringify([d.firstChild.textContent, d.querySelector('.path').textContent])")
+        log("deck search shows the deck's own name first, its parents underneath", json.loads(hit)[0] == "Particles" and "Grammar" in json.loads(hit)[1], hit)
+        yield from self.js("var i=document.querySelector('.side input'); i.value=''; i.dispatchEvent(new Event('input')); 1")
+
         # 4. View menu: spacing, emphasis, theme
         yield from self.click("#view", 1200)
         mark("view")
@@ -260,7 +277,10 @@ class Driver:
         # 6. AI settings: deck picker and Test connection
         yield from self.click("#aiset", 1300)
         mark("settings")
-        yield from self.js("var s=document.getElementById('ai-provider'); s.value='openai_compatible';"
+        preset = yield from self.js("var s=document.getElementById('ai-provider'); s.value='openai'; s.dispatchEvent(new Event('change'));"
+                                    "JSON.stringify([document.getElementById('ai-base').value, document.getElementById('ai-base').closest('.field').hidden, s.options.length])")
+        log("choosing OpenAI fills in its address and hides the address box", json.loads(preset) == ["https://api.openai.com/v1", True, 7], preset)
+        yield from self.js("var s=document.getElementById('ai-provider'); s.value='custom';"
                            "s.dispatchEvent(new Event('change')); 1")
         yield 500
         yield from self.click("#ai-model", 100)

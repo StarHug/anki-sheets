@@ -78,12 +78,17 @@ def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int 
         )
         return "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
     headers = {"authorization": "Bearer " + c["api_key"]} if c["api_key"] else {}
-    out = _post(
-        c["base_url"].rstrip("/") + "/chat/completions",
-        headers,
-        {"model": model, "max_tokens": max_tokens,
-         "messages": [{"role": "system", "content": system}] + messages},
-    )
+    url = c["base_url"].rstrip("/") + "/chat/completions"
+    body = {"model": model, "max_tokens": max_tokens,
+            "messages": [{"role": "system", "content": system}] + messages}
+    try:
+        out = _post(url, headers, body)
+    except AIError as e:
+        # newer OpenAI models take the same limit under a different name
+        if "max_completion_tokens" not in str(e):
+            raise
+        body["max_completion_tokens"] = body.pop("max_tokens")
+        out = _post(url, headers, body)
     try:
         return out["choices"][0]["message"]["content"] or ""
     except (KeyError, IndexError, TypeError):

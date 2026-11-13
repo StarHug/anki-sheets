@@ -113,6 +113,13 @@ def test_condense_picks_a_list_or_declines(col, server):
     assert none == {"condensable": False, "reason": "These cards are separate facts without a shared structure.", "count": 3}
 
 
+def test_newer_openai_models_get_the_renamed_token_limit(server):
+    cfg = dict(compat(server), model="newer")
+    assert ai.call_model(cfg, "ser vs estar", [{"role": "user", "content": "hi"}])
+    sent = fake_ai.requests[-1]["body"]
+    assert "max_tokens" not in sent and sent["max_completion_tokens"] == 2000
+
+
 def test_bad_model_output_is_rejected_not_rendered():
     cards = [(11, "a"), (22, "b")]
     with pytest.raises(ai.AIError):

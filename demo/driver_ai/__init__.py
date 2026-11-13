@@ -144,7 +144,7 @@ class Driver:
         yield from self.click("#aiset", 1400)
         mark("settings")
         yield from self.click("#ai-on", 500)
-        yield from self.js("var s=document.getElementById('ai-provider'); s.value='openai_compatible';"
+        yield from self.js("var s=document.getElementById('ai-provider'); s.value='custom';"
                            "s.dispatchEvent(new Event('change')); 1")
         yield 700
         yield from self.click("#ai-model", 100)

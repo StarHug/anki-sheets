@@ -1,6 +1,6 @@
 var Sheets = (function () {
   var VIEW_DEFAULTS = { ticks: false, hideTicked: false, density: "comfortable", emphasis: "question",
-                        theme: "anki", notesOpen: false, split: null };
+                        theme: "anki", notesOpen: false, split: null, side: null };
   var S = { tree: [], deck: null, scope: "all", mode: "read", groups: {}, limit: null,
             filter: "", deckFilter: "", open: {}, data: null, view: Object.assign({}, VIEW_DEFAULTS), viewOpen: false,
             ai: { enabled: false, ready: false, never_send_decks: [], max_cards: 200 },
@@ -109,7 +109,8 @@ var Sheets = (function () {
         onclick: function () { S.open[n.id] = !open; renderSide(); } }, open ? "▾" : "▸"),
       h("button", { class: "dk", type: "button", title: n.full, "data-deck": n.full,
         onclick: function () { selectDeck(n.full); } },
-        h("span", { text: label || n.name }), h("span", { class: "n", text: fmt(n.cards) })));
+        label ? h("span", {}, n.name, h("small", { class: "path", text: label })) : h("span", { text: n.name }),
+        h("span", { class: "n", text: fmt(n.cards) })));
   }
 
   function treeEl(nodes) {
@@ -124,7 +125,7 @@ var Sheets = (function () {
     var body;
     if (q) {
       var hits = flat(S.tree, []).filter(function (n) { return n.full.toLowerCase().indexOf(q) >= 0; }).slice(0, 80);
-      body = h("ul", {}, hits.map(function (n) { return h("li", {}, nodeEl(n, n.full.split("::").join(" › "))); }));
+      body = h("ul", {}, hits.map(function (n) { return h("li", {}, nodeEl(n, n.full.split("::").slice(0, -1).join(" › ") || " ")); }));
     } else {
       body = treeEl(S.tree);
     }
@@ -164,6 +165,7 @@ var Sheets = (function () {
     app.className = "theme-" + S.view.theme;
     var main = app.querySelector(".main");
     if (!main) return;
+    applySide();
     main.className = mainClass();
     main.style.setProperty("--qw", (S.view.split || SPLIT_DEFAULT) + "%");
   }
@@ -172,6 +174,55 @@ var Sheets = (function () {
     S.view.split = pct == null ? null : Math.max(SPLIT_MIN, Math.min(SPLIT_MAX, Math.round(pct * 10) / 10));
     applyView();
     if (persist) save();
+  }
+
+  // the edge between the deck list and the sheet is a drag handle, so long deck names can be read
+  var SIDE_DEFAULT = 264, SIDE_MIN = 180, SIDE_MAX = 640, lastSideDown = 0;
+  function applySide() {
+    var side = app.querySelector(".side");
+    if (side) side.style.flexBasis = Math.min(S.view.side || SIDE_DEFAULT, Math.max(SIDE_MIN, window.innerWidth - 360)) + "px";
+  }
+  function setSide(px, persist) {
+    S.view.side = px == null ? null : Math.max(SIDE_MIN, Math.min(SIDE_MAX, Math.round(px)));
+    applySide();
+    if (persist) save();
+  }
+  function sideGrip() {
+    var el = h("div", { class: "sidegrip", role: "separator", "aria-orientation": "vertical", tabindex: "0",
+      "aria-label": "Deck list width", title: "Drag to resize the deck list. Double-click to reset." });
+    el.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      var now = Date.now();
+      if (now - lastSideDown < 450) { lastSideDown = 0; setSide(null, true); return; }
+      lastSideDown = now;
+      var startX = e.clientX, moved = false, left = app.querySelector(".side").getBoundingClientRect().left;
+      function move(ev) {
+        if (!moved && Math.abs(ev.clientX - startX) < 4) return;
+        moved = true;
+        lastSideDown = 0;
+        document.body.classList.add("dragging");
+        setSide(ev.clientX - left, false);
+      }
+      function up() {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        el.removeEventListener("pointercancel", up);
+        document.body.classList.remove("dragging");
+        if (moved) save();
+      }
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerup", up);
+      el.addEventListener("pointercancel", up);
+    });
+    el.addEventListener("dblclick", function () { setSide(null, true); });
+    el.addEventListener("keydown", function (e) {
+      var cur = S.view.side || SIDE_DEFAULT;
+      if (e.key === "ArrowLeft") setSide(cur - 16, true);
+      else if (e.key === "ArrowRight") setSide(cur + 16, true);
+      else if (e.key === "Home" || e.key === "Enter") setSide(null, true);
+    });
+    return el;
   }
 
   // the gap between question and answer is a drag handle; any row's handle moves every row
@@ -747,15 +798,28 @@ var Sheets = (function () {
     var a = S.ai, never = (a.never_send_decks || []).slice();
     var decks = flat(S.tree, []);
     var enabled = h("input", { type: "checkbox", id: "ai-on", checked: a.enabled });
-    var provider = h("select", { id: "ai-provider" },
-      h("option", { value: "anthropic", selected: a.provider === "anthropic" }, "Anthropic (Claude)"),
-      h("option", { value: "openai_compatible", selected: a.provider === "openai_compatible" }, "OpenAI-compatible, including a local model"));
+    // Presets only fill in the server address. Everything except Anthropic speaks the OpenAI chat format.
+    var PRESETS = [["anthropic", "Anthropic (Claude)", ""],
+      ["openai", "OpenAI (ChatGPT)", "https://api.openai.com/v1"],
+      ["gemini", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai"],
+      ["openrouter", "OpenRouter", "https://openrouter.ai/api/v1"],
+      ["ollama", "Ollama, on this computer", "http://localhost:11434/v1"],
+      ["lmstudio", "LM Studio, on this computer", "http://localhost:1234/v1"],
+      ["custom", "Other OpenAI-compatible server", ""]];
+    var LOCAL = { ollama: 1, lmstudio: 1 };
+    function trimUrl(u) { return (u || "").trim().replace(/\/+$/, ""); }
+    var current = a.provider === "anthropic" ? "anthropic" : "custom";
+    if (current === "custom") PRESETS.forEach(function (p) { if (p[2] && p[2] === trimUrl(a.base_url)) current = p[0]; });
+    var provider = h("select", { id: "ai-provider" }, PRESETS.map(function (p) {
+      return h("option", { value: p[0], selected: p[0] === current }, p[1]);
+    }));
+    function wire() { return provider.value === "anthropic" ? "anthropic" : "openai_compatible"; }
     var key = h("input", { type: "password", id: "ai-key", autocomplete: "off",
       placeholder: a.has_key ? "A key is saved. Type a new one to replace it." : "Paste your API key" });
     var model = h("input", { type: "text", id: "ai-model", value: a.model || "", placeholder: a.default_model || "Model name" });
     var base = h("input", { type: "text", id: "ai-base", value: a.base_url || "", placeholder: "http://localhost:11434/v1" });
-    var baseRow = h("label", { class: "field" }, h("span", { text: "Server address" }), base,
-      h("small", { text: "With a model on your own computer, nothing leaves this machine." }));
+    var baseNote = h("small", {});
+    var baseRow = h("label", { class: "field" }, h("span", { text: "Server address" }), base, baseNote);
     var status = h("span", { class: "test-status", role: "status" });
     var testBtn = h("button", { class: "btn small", type: "button", id: "ai-test",
       title: "Sends one short test message with no card content",
@@ -763,7 +827,7 @@ var Sheets = (function () {
         testBtn.disabled = true;
         status.className = "test-status";
         status.textContent = "Testing…";
-        aiCall("ai_test", { provider: provider.value, api_key: key.value, model: model.value, base_url: base.value }, function (p) {
+        aiCall("ai_test", { provider: wire(), api_key: key.value, model: model.value, base_url: base.value }, function (p) {
           testBtn.disabled = false;
           status.className = "test-status " + (p.ok ? "ok" : "bad");
           status.textContent = p.ok ? "Connected. The AI replied." : p.error;
@@ -810,8 +874,18 @@ var Sheets = (function () {
       if (!rows.length) rows.push(h("div", { class: "muted never-none", text: "No deck matches that search." }));
       put(list, rows);
     }
-    function sync() { baseRow.hidden = provider.value !== "openai_compatible"; }
-    provider.addEventListener("change", sync);
+    function sync() {
+      var v = provider.value;
+      baseRow.hidden = !(v === "custom" || LOCAL[v]);
+      baseNote.textContent = LOCAL[v] ? "With a model on your own computer, nothing leaves this machine. Change the address only if you moved it."
+        : "The address your provider gives for its OpenAI-compatible API, usually ending in /v1.";
+      model.placeholder = v === "anthropic" ? (a.default_model || "Model name") : "Model name, as your provider lists it";
+    }
+    provider.addEventListener("change", function () {
+      var v = provider.value;
+      PRESETS.forEach(function (p) { if (p[0] === v) base.value = p[2]; });
+      sync();
+    });
     drawNever();
     sync();
     function close() { overlay.remove(); }
@@ -834,7 +908,7 @@ var Sheets = (function () {
           h("button", { class: "btn", type: "button", onclick: close }, "Cancel"),
           h("button", { class: "btn primary", type: "button", id: "ai-save",
             onclick: function () {
-              call("ai_save", { enabled: enabled.checked, provider: provider.value, api_key: key.value,
+              call("ai_save", { enabled: enabled.checked, provider: wire(), api_key: key.value,
                 model: model.value, base_url: base.value, never_send_decks: never }).then(function (pub) {
                 S.ai = pub;
                 if (!pub.ready) S.askOpen = false;
@@ -880,7 +954,7 @@ var Sheets = (function () {
       h("button", { class: "btn" + (S.viewOpen ? " on" : ""), type: "button", id: "view", "aria-expanded": String(S.viewOpen),
         title: "Layout options: sections, spacing, emphasis, theme, notes and review ticks",
         onclick: function () { S.viewOpen = !S.viewOpen; renderView(); renderBar(); } }, "View"),
-      h("button", { class: "btn", type: "button", id: "pdf", title: "Save this sheet as a PDF, as it looks now", onclick: function () { call("pdf", { title: title() }); } }, "Export PDF"),
+      h("button", { class: "btn", type: "button", id: "pdf", title: "Save this sheet as a PDF in the mode you are in, on a white page", onclick: function () { call("pdf", { title: title() }); } }, "Export PDF"),
       h("button", { class: "btn", type: "button", id: "aiset", title: "Turn the optional AI features on or off, and choose decks that are never sent", onclick: openSettings }, "AI settings"),
       askBtn,
       h("button", { class: "btn primary", type: "button", id: "study", title: "Open this deck in Anki's normal flashcard review", onclick: function () { call("study", { deck: S.deck }); } },
@@ -999,6 +1073,7 @@ var Sheets = (function () {
           h("input", { type: "search", placeholder: "Find a deck", "aria-label": "Find a deck", title: "Type part of a deck name to find it",
             oninput: function (e) { S.deckFilter = e.target.value; renderSide(); } }),
           h("div", { class: "tree" })),
+        sideGrip(),
         h("div", { class: "main" }, h("div", { class: "bar" }), scroll)]);
       applyView();
       renderSide();
