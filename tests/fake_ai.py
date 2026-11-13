@@ -105,9 +105,17 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.endswith("/chat/completions"):
             if body.get("model") == "newer" and "max_tokens" in body:
                 return self._send(400, {"error": {"message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead."}})
+            m = re.fullmatch(r"status-(\d+)", str(body.get("model")))
+            if m:
+                return self._send(int(m.group(1)), {"error": {"message": "stand-in refusal"}})
             msgs = body["messages"]
-            out = answer(msgs[0]["content"], msgs[1:])
-            return self._send(200, {"choices": [{"message": {"role": "assistant", "content": json.dumps(out)}}]})
+            out = json.dumps(answer(msgs[0]["content"], msgs[1:]))
+            cut = body.get("model") == "cut-always" or (body.get("model") == "cut-once" and len(msgs) <= 2)
+            if cut:  # a model that ran out of room part-way through its answer
+                return self._send(200, {"choices": [{"finish_reason": "length", "message": {"role": "assistant", "content": out[: len(out) // 2]}}]})
+            if body.get("model") == "sloppy":  # trailing commas, wrapped in a code fence
+                out = "```json\n" + out.replace("}", ",}").replace("]", ",]") + "\n```"
+            return self._send(200, {"choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": out}}]})
         self._send(404, {"error": "not found"})
 
 

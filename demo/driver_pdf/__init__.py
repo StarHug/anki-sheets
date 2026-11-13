@@ -43,7 +43,14 @@ def start():
     read, compact = os.path.join(OUT, "stress-read.pdf"), os.path.join(OUT, "stress-compact.pdf")
     steps = [
         (2500, lambda: d.web.eval("Sheets.state.view.theme='paper'; Sheets.state.view.emphasis='tint'; Sheets.reload().then(function(){Sheets.selectDeck(%s)})" % json.dumps(DECK))),
-        (4000, lambda: d.export_pdf(read)),
+        (3000, lambda: d.web.evalWithCallback(
+            "document.getElementById('evil') && document.getElementById('evil').click();"
+            "JSON.stringify({pwned: window.pwned || 0, handlers: document.querySelectorAll('.row [onerror], .row [onload], .row iframe').length,"
+            " js: [].filter.call(document.querySelectorAll('.row a'), function(a){ return /script:/i.test(a.getAttribute('href') || a.getAttribute('xlink:href') || ''); }).length,"
+            " shown: document.body.textContent.indexOf('gracias') >= 0})",
+            lambda r: log("a hostile card's scripts never run and its text still shows",
+                          bool(r) and json.loads(r) == {"pwned": 0, "handlers": 0, "js": 0, "shown": True}, r))),
+        (1000, lambda: d.export_pdf(read)),
         (6000, lambda: d.web.eval("document.querySelector('button[data-mode=compact]').click()")),
         (2500, lambda: d.export_pdf(compact)),
         (6000, lambda: (check(read, "read"), check(compact, "compact"))),

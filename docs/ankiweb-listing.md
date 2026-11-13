@@ -76,6 +76,8 @@ Thank you!
 
 **Changelog**
 
+1.0.3: security fix: code hidden in a card (for example from a shared deck) can no longer run inside Sheets, and a saved API key is only ever sent to the server it was entered for. Click a deck or section title to fold it. Drag the sheet's right edge to change its width. Long AI summaries no longer get cut off, and a broken AI reply is retried once. Clearer AI error messages. Copy button on AI summaries. Quieter scrollbars. Oversized card headings are capped.
+
 1.0.2: drag the edge of the deck list to widen it (double-click to reset). Deck search shows each deck's own name first. AI settings has ready-made choices for OpenAI, Gemini, OpenRouter, Ollama and LM Studio. Buttons keep their shape when a theme add-on restyles Anki. PDF export fixed for long cards: no cut-off lists, oversized headings, printed scrollbars or blank pages.
 
 1.0.1: the Sheets logo now shows beside the name in the app. New sample screenshots.

@@ -97,7 +97,7 @@ def test_connection_check_sends_no_cards():
         assert ai.test_connection({"provider": "anthropic", "api_key": "test-key", "base_url": url + "/v1/messages"})
         body = json.dumps(fake_ai.requests[0]["body"])
         assert "Cards:" not in body and "Q:" not in body and fake_ai.requests[0]["body"]["max_tokens"] == 16
-        with pytest.raises(ai.AIError, match="Check the API key"):
+        with pytest.raises(ai.AIError, match="Check the key in AI settings"):
             ai.test_connection({"provider": "anthropic", "api_key": "wrong", "base_url": url + "/v1/messages"})
     finally:
         srv.shutdown()

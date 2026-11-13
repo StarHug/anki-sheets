@@ -120,6 +120,29 @@ def test_newer_openai_models_get_the_renamed_token_limit(server):
     assert "max_tokens" not in sent and sent["max_completion_tokens"] == 2000
 
 
+def test_cut_off_answer_is_retried_with_more_room(col, server):
+    cards = sheet.ai_cards(col, nids(col, GRAMMAR, "topic::verbs"))["cards"]
+    fake_ai.requests.clear()
+    out = ai.condense(dict(compat(server), model="cut-once"), "Verbs (Ser and Estar)", cards)
+    assert out["condensable"] and len(fake_ai.requests) == 2
+    first, second = (r["body"] for r in fake_ai.requests)
+    assert first["max_tokens"] == second["max_tokens"] == 8000
+    assert "about 6000 words" in second["messages"][-1]["content"]
+
+
+def test_answer_cut_off_twice_gives_the_usual_error(col, server):
+    cards = sheet.ai_cards(col, nids(col, GRAMMAR, "topic::verbs"))["cards"]
+    with pytest.raises(ai.AIError, match="usable answer"):
+        ai.condense(dict(compat(server), model="cut-always"), "Verbs (Ser and Estar)", cards)
+
+
+def test_trailing_commas_and_code_fences_are_tolerated(col, server):
+    cards = sheet.ai_cards(col, nids(col, GRAMMAR, "topic::verbs"))["cards"]
+    fake_ai.requests.clear()
+    assert ai.condense(dict(compat(server), model="sloppy"), "Verbs (Ser and Estar)", cards)["condensable"]
+    assert len(fake_ai.requests) == 1
+
+
 def test_bad_model_output_is_rejected_not_rendered():
     cards = [(11, "a"), (22, "b")]
     with pytest.raises(ai.AIError):
@@ -160,9 +183,13 @@ def test_ask_sends_history_and_only_the_given_cards(col, server):
 
 def test_errors_are_readable(col, server):
     cards = [(1, "Q: a | A: b")]
-    with pytest.raises(ai.AIError, match="401.*invalid x-api-key.*Check the API key"):
+    with pytest.raises(ai.AIError, match="didn't accept the API key.*401: invalid x-api-key"):
         ai.ask(claude(server, key="wrong"), "t", cards, [], "q", False)
-    with pytest.raises(ai.AIError, match="Couldn't reach"):
+    for code, words in ((402, "out of credit"), (404, "couldn't find that model"), (429, "limiting requests"),
+                        (503, "having trouble"), (400, "turned down")):
+        with pytest.raises(ai.AIError, match="%s.*%d: stand-in refusal" % (words, code)):
+            ai.ask(dict(compat(server), model="status-%d" % code), "t", cards, [], "q", False)
+    with pytest.raises(ai.AIError, match="Couldn't reach.*internet connection"):
         ai.ask({"enabled": True, "provider": "openai_compatible", "base_url": "http://127.0.0.1:9/v1", "model": "m"},
                "t", cards, [], "q", False)
 

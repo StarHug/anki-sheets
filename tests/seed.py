@@ -204,6 +204,11 @@ def stress_notes():
         out.append(("Full conjugation table for <b>hablar</b>, set %d" % i, table))
         out.append(("Where is the long reference link for set %d?" % i, long_word))
     out.insert(9, ("<h2>Practice routine that is taller than one page</h2>", tall))
+    # a card from a hostile shared deck: none of this may run in Sheets
+    out.append(('What does <b>gracias</b> mean?<img src="nope.png" onerror="window.pwned=1">'
+                '<svg onload="window.pwned=2"></svg><iframe srcdoc="<script>parent.pwned=3</script>"></iframe>',
+                'Thank you. <a href="javascript:window.pwned=4" id="evil">more</a>'
+                '<a href=" jav&#x09;ascript:window.pwned=5">x</a><svg><a xlink:href="javascript:window.pwned=6"><text>y</text></a></svg>'))
     return out
 
 

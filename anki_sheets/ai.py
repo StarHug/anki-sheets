@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import os
 import urllib.error
 import urllib.request
@@ -47,7 +48,7 @@ def ready(ai_cfg: dict) -> bool:
 # ---------------------------------------------------------------- transport
 
 
-def _post(url: str, headers: dict, body: dict, timeout: int = 90) -> dict:
+def _post(url: str, headers: dict, body: dict, timeout: int = 240) -> dict:
     req = urllib.request.Request(
         url, data=json.dumps(body).encode(), headers={"content-type": "application/json", **headers}
     )
@@ -61,13 +62,41 @@ def _post(url: str, headers: dict, body: dict, timeout: int = 90) -> dict:
             detail = err.get("message", detail) if isinstance(err, dict) else (err or detail)
         except Exception:
             pass
-        hint = " Check the API key in AI settings." if e.code in (401, 403) else ""
-        raise AIError("The AI service answered %d: %s%s" % (e.code, detail, hint)) from None
+        raise AIError(_explain(e.code, detail)) from None
+    except TimeoutError:
+        raise AIError("The AI service took too long to answer. Try again, or try a smaller section.") from None
     except (urllib.error.URLError, OSError) as e:
-        raise AIError("Couldn't reach the AI service (%s)." % getattr(e, "reason", e)) from None
+        reason = getattr(e, "reason", e)
+        if isinstance(reason, TimeoutError) or "timed out" in str(reason):
+            raise AIError("The AI service took too long to answer. Try again, or try a smaller section.") from None
+        raise AIError("Couldn't reach the AI service (%s). Check your internet connection and the "
+                      "server address in AI settings." % reason) from None
+
+
+def _explain(code: int, detail: str) -> str:
+    """A plain sentence for each kind of refusal, with the service's own words after it."""
+    if code in (401, 403):
+        lead = "The AI service didn't accept the API key. Check the key in AI settings."
+    elif code == 402:
+        lead = "The AI service says the account is out of credit. Add credit with your provider, then try again."
+    elif code == 404:
+        lead = "The AI service couldn't find that model or address. Check the model name and server address in AI settings."
+    elif code == 429:
+        lead = "The AI service is limiting requests, or the account is out of credit. Wait a minute and try again."
+    elif code >= 500:
+        lead = "The AI service is having trouble right now. Try again in a few minutes."
+    else:
+        lead = "The AI service turned down the request."
+    return "%s (%d: %s)" % (lead, code, detail.strip()[:200]) if detail.strip() else "%s (%d)" % (lead, code)
 
 
 def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int = 2000) -> str:
+    return _complete(ai_cfg, system, messages, max_tokens)[0]
+
+
+
+def _complete(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int) -> tuple[str, bool]:
+    """The reply text, and whether the model stopped because it hit the length limit."""
     c = merged(ai_cfg)
     model = c["model"] or DEFAULT_MODELS.get(c["provider"], "")
     if c["provider"] == "anthropic":
@@ -76,7 +105,8 @@ def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int 
             {"x-api-key": c["api_key"], "anthropic-version": "2023-06-01"},
             {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages},
         )
-        return "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
+        text = "".join(b.get("text", "") for b in out.get("content", []) if b.get("type") == "text")
+        return text, out.get("stop_reason") == "max_tokens"
     headers = {"authorization": "Bearer " + c["api_key"]} if c["api_key"] else {}
     url = c["base_url"].rstrip("/") + "/chat/completions"
     body = {"model": model, "max_tokens": max_tokens,
@@ -90,22 +120,52 @@ def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int 
         body["max_completion_tokens"] = body.pop("max_tokens")
         out = _post(url, headers, body)
     try:
-        return out["choices"][0]["message"]["content"] or ""
+        choice = out["choices"][0]
+        return choice["message"].get("content") or "", choice.get("finish_reason") == "length"
     except (KeyError, IndexError, TypeError):
         raise AIError("The AI service sent a reply this add-on couldn't read.") from None
+
+
+UNUSABLE = "The AI didn't return a usable answer. Try again."
 
 
 def parse_json(text: str) -> dict:
     start, end = text.find("{"), text.rfind("}")
     if start < 0 or end <= start:
-        raise AIError("The AI didn't return a usable answer. Try again.")
+        raise AIError(UNUSABLE)
+    raw = text[start : end + 1]
     try:
-        out = json.loads(text[start : end + 1])
+        out = json.loads(raw)
     except ValueError:
-        raise AIError("The AI didn't return a usable answer. Try again.") from None
+        # the commonest slip from smaller models: a comma before a closing bracket
+        try:
+            out = json.loads(re.sub(r",\s*([}\]])", r"\1", raw))
+        except ValueError:
+            raise AIError(UNUSABLE) from None
     if not isinstance(out, dict):
-        raise AIError("The AI didn't return a usable answer. Try again.")
+        raise AIError(UNUSABLE)
     return out
+
+
+def ask_json(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int, check=lambda d: d) -> dict:
+    """Ask for a JSON reply. One retry when the reply is cut off, unreadable, or the wrong shape.
+    `check` turns the parsed reply into the result, raising AIError if it can't be used."""
+    text, cut = _complete(ai_cfg, system, messages, max_tokens)
+    try:
+        if not cut:
+            return check(parse_json(text))
+    except AIError:
+        pass
+    room = min(max_tokens * 2, 8000)
+    if cut:  # it ran out of room: say how much it has this time
+        note = ("Your reply was cut off because it hit the length limit. This time the limit is about %d words. "
+                "Send the complete JSON object again so it fits, and nothing else." % (room * 3 // 4))
+    else:
+        note = ("That reply could not be used: it was not valid JSON in the shape asked for. "
+                "Send the complete JSON object again, in exactly that shape, and nothing else.")
+    retry = messages + [{"role": "assistant", "content": text[:2000] or "(empty)"}, {"role": "user", "content": note}]
+    text, _ = _complete(ai_cfg, system, retry, room)
+    return check(parse_json(text))
 
 
 # ---------------------------------------------------------------- prompts
@@ -196,8 +256,8 @@ def normalize_summary(raw: dict, cards: list[tuple[int, str]]) -> dict:
 
 def condense(ai_cfg: dict, title: str, cards: list[tuple[int, str]]) -> dict:
     user = "Topic label: %s\n\nCards:\n%s" % (title, cards_block(cards))
-    text = call_model(ai_cfg, CONDENSE_SYSTEM, [{"role": "user", "content": user}], 2500)
-    out = normalize_summary(parse_json(text), cards)
+    out = ask_json(ai_cfg, CONDENSE_SYSTEM, [{"role": "user", "content": user}], 8000,
+                   lambda raw: normalize_summary(raw, cards))
     out["count"] = len(cards)
     return out
 
@@ -211,13 +271,18 @@ def ask(ai_cfg: dict, title: str, cards: list[tuple[int, str]], history: list[di
         if turn.get("role") in ("user", "assistant") and _s(turn.get("text")):
             messages.append({"role": turn["role"], "content": _s(turn["text"])})
     messages.append({"role": "user", "content": question})
-    raw = parse_json(call_model(ai_cfg, system, messages, 900))
+    def has_answer(raw: dict) -> dict:
+        if not _s(raw.get("answer")):
+            raise AIError(UNUSABLE)
+        return raw
+
+    raw = ask_json(ai_cfg, system, messages, 3000, has_answer)
     basis = raw.get("basis") if raw.get("basis") in ("cards", "general", "none") else "cards"
     if strict and basis == "general":
         basis = "none"
     answer = _s(raw.get("answer"))
     if not answer:
-        raise AIError("The AI didn't return a usable answer. Try again.")
+        raise AIError(UNUSABLE)
     return {"answer": answer, "basis": basis,
             "sources": _nids(raw.get("sources"), cards) if basis == "cards" else []}
 

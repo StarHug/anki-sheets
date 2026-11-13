@@ -210,6 +210,20 @@ class Driver:
         yield from self.click(".sidegrip", 1200, double=True)
         w2 = yield from self.js(W)
         log("double-clicking the edge resets the deck list", w2 == 264, w2)
+        F = "JSON.stringify([document.querySelectorAll('.row').length, [].filter.call(document.querySelectorAll('.row'), function(r){return r.offsetParent}).length])"
+        f0 = json.loads((yield from self.js(F)))
+        yield from self.click(".ghead .fold", 500)
+        f1 = json.loads((yield from self.js(F)))
+        yield from self.click(".ghead .fold", 500)
+        f2 = json.loads((yield from self.js(F)))
+        log("clicking a section title folds its cards away and back", f0[1] == f0[0] and 0 < f1[1] < f0[1] or (f1[1] == 0 and f0[1] > 0) and f2 == f0, [f0, f1, f2])
+        P = "Math.round(document.querySelector('.pagewrap').getBoundingClientRect().width)"
+        p0 = yield from self.js(P)
+        yield from self.drag(".pagegrip", -200, cursor=False)
+        p1 = yield from self.js(P)
+        yield from self.click(".pagegrip", 1200, double=True)
+        p2 = yield from self.js(P)
+        log("dragging the sheet's right edge changes its width, double-click resets it", p1 < p0 - 150 and p2 == p0, [p0, p1, p2])
         yield from self.js("var i=document.querySelector('.side input'); i.value='partic'; i.dispatchEvent(new Event('input')); 1")
         yield 400
         hit = yield from self.js("var d=document.querySelector('.tree ul .dk span'); JSON.stringify([d.firstChild.textContent, d.querySelector('.path').textContent])")

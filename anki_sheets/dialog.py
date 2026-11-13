@@ -71,6 +71,11 @@ def group_fingerprint(nids: list[int]) -> str:
     return ai.fingerprint([tuple(r) for r in mw.col.db.all("select id, mod from notes where id in (%s)" % ids)])
 
 
+def _where(c: dict) -> tuple:
+    """Which server a saved key belongs to."""
+    return (c.get("provider"), (c.get("base_url") or "").strip().rstrip("/"))
+
+
 class SheetDialog(QDialog):
     def __init__(self, deck_id: int | None = None) -> None:
         super().__init__(None, Qt.WindowType.Window)
@@ -214,6 +219,9 @@ class SheetDialog(QDialog):
         mw.activateWindow()
         mw.raise_()
 
+    def cmd_copy(self, arg: dict) -> None:
+        mw.app.clipboard().setText(str(arg.get("text") or ""))
+
     def cmd_pdf(self, arg: dict) -> None:
         name = (arg.get("title") or "sheet").replace("::", " - ").replace("/", "-")
         path = getSaveFile(self, "Export PDF", "ankiSheets", "PDF", ".pdf", fname=name)
@@ -240,11 +248,14 @@ class SheetDialog(QDialog):
 
     def cmd_ai_save(self, arg: dict) -> dict:
         c = config()["ai"]
+        before = _where(c)
         for k in ("enabled", "provider", "model", "base_url"):
             if k in arg:
                 c[k] = arg[k].strip() if isinstance(arg[k], str) else bool(arg[k])
         if arg.get("api_key"):
             c["api_key"] = arg["api_key"].strip()
+        elif _where(c) != before:
+            c["api_key"] = ""  # a saved key only ever goes to the server it was typed in for
         if arg.get("clear_key"):
             c["api_key"] = ""
         if "never_send_decks" in arg:
@@ -260,6 +271,8 @@ class SheetDialog(QDialog):
                 c[k] = arg[k].strip()
         if arg.get("api_key"):
             c["api_key"] = arg["api_key"].strip()
+        elif _where(c) != _where(config()["ai"]):
+            c["api_key"] = ""  # never send the saved key to a server it wasn't typed in for
         self._run_ai(int(arg["req"]), lambda: ai.test_connection(c))
         return {"started": True}
 

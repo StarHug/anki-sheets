@@ -1,10 +1,10 @@
 var Sheets = (function () {
   var VIEW_DEFAULTS = { ticks: false, hideTicked: false, density: "comfortable", emphasis: "question",
-                        theme: "anki", notesOpen: false, split: null, side: null };
+                        theme: "anki", notesOpen: false, split: null, side: null, page: null };
   var S = { tree: [], deck: null, scope: "all", mode: "read", groups: {}, limit: null,
             filter: "", deckFilter: "", open: {}, data: null, view: Object.assign({}, VIEW_DEFAULTS), viewOpen: false,
             ai: { enabled: false, ready: false, never_send_decks: [], max_cards: 200 },
-            askOpen: false, chat: [], strict: false, cond: {}, pending: {}, seq: 0 };
+            fold: {}, askOpen: false, chat: [], strict: false, cond: {}, pending: {}, seq: 0 };
   var SCOPES = [["all", "All cards"], ["due", "Due"], ["new", "New"], ["weak", "Weak spots"]];
   var MODES = [["read", "Read"], ["cover", "Cover answers"], ["compact", "Compact"]];
   var DENSITY = [["comfortable", "Comfortable"], ["tight", "Tight"]];
@@ -50,12 +50,34 @@ var Sheets = (function () {
     if (handler) handler(payload);
   }
 
+  // Card fields can come from shared decks, so their HTML is parsed without running anything,
+  // then stripped of every way to run code, before it goes on the page.
+  var DROP_TAGS = /^(script|iframe|frame|frameset|object|embed|applet|base|meta|link|form|portal|noscript)$/i;
+  var BAD_URL = /^(javascript|vbscript|data:text\/html|data:image\/svg)/i;
+  function cardHTML(src) {
+    var t = document.createElement("template");
+    t.innerHTML = src || "";
+    var walk = document.createTreeWalker(t.content, NodeFilter.SHOW_ELEMENT), dead = [], el;
+    while ((el = walk.nextNode())) {
+      if (DROP_TAGS.test(el.localName)) { dead.push(el); continue; }
+      for (var i = el.attributes.length - 1; i >= 0; i--) {
+        var a = el.attributes[i], name = a.name.toLowerCase();
+        var val = a.value.replace(/[\u0000-\u0020\u007f-\u00a0]+/g, "").toLowerCase();
+        if (name.slice(0, 2) === "on" || name === "srcdoc" || name === "formaction" || BAD_URL.test(val))
+          el.removeAttribute(a.name);
+      }
+    }
+    dead.forEach(function (n) { n.remove(); });
+    return t.content;
+  }
+
   function h(tag, attrs) {
     var el = document.createElement(tag);
     for (var k in attrs || {}) {
       var v = attrs[k];
       if (v == null || v === false) continue;
       if (k === "html") el.innerHTML = v;
+      else if (k === "card") el.appendChild(cardHTML(v));
       else if (k === "text") el.textContent = v;
       else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
       else el.setAttribute(k, v === true ? "" : v);
@@ -168,6 +190,7 @@ var Sheets = (function () {
     applySide();
     main.className = mainClass();
     main.style.setProperty("--qw", (S.view.split || SPLIT_DEFAULT) + "%");
+    if (S.view.page) main.style.setProperty("--pw", S.view.page + "px"); else main.style.removeProperty("--pw");
   }
 
   function setSplit(pct, persist) {
@@ -187,16 +210,27 @@ var Sheets = (function () {
     applySide();
     if (persist) save();
   }
-  function sideGrip() {
-    var el = h("div", { class: "sidegrip", role: "separator", "aria-orientation": "vertical", tabindex: "0",
-      "aria-label": "Deck list width", title: "Drag to resize the deck list. Double-click to reset." });
+  // the sheet's right edge drags the same way, to make the page wider or narrower
+  var PAGE_MIN = 520, PAGE_MAX = 4000;
+  function setPage(px, persist) {
+    S.view.page = px == null ? null : Math.max(PAGE_MIN, Math.min(PAGE_MAX, Math.round(px)));
+    applyView();
+    if (persist) save();
+  }
+  function sideGrip() { return grip("sidegrip", "Deck list width", "Drag to resize the deck list. Double-click to reset.",
+    ".side", setSide, function () { return S.view.side || SIDE_DEFAULT; }); }
+  function pageGrip() { return grip("pagegrip", "Sheet width", "Drag to make the sheet wider or narrower. Double-click to reset.",
+    ".pagewrap", setPage, function () { return S.view.page || 940; }); }
+  function grip(cls, label, tip, boxSel, set, get) {
+    var el = h("div", { class: cls, role: "separator", "aria-orientation": "vertical", tabindex: "0", "aria-label": label, title: tip });
+    function setSide(px, persist) { set(px, persist); }
     el.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       var now = Date.now();
       if (now - lastSideDown < 450) { lastSideDown = 0; setSide(null, true); return; }
       lastSideDown = now;
-      var startX = e.clientX, moved = false, left = app.querySelector(".side").getBoundingClientRect().left;
+      var startX = e.clientX, moved = false, left = app.querySelector(boxSel).getBoundingClientRect().left;
       function move(ev) {
         if (!moved && Math.abs(ev.clientX - startX) < 4) return;
         moved = true;
@@ -217,7 +251,7 @@ var Sheets = (function () {
     });
     el.addEventListener("dblclick", function () { setSide(null, true); });
     el.addEventListener("keydown", function (e) {
-      var cur = S.view.side || SIDE_DEFAULT;
+      var cur = get();
       if (e.key === "ArrowLeft") setSide(cur - 16, true);
       else if (e.key === "ArrowRight") setSide(cur + 16, true);
       else if (e.key === "Home" || e.key === "Enter") setSide(null, true);
@@ -362,7 +396,7 @@ var Sheets = (function () {
     var kind = r.badge ? h("span", { class: "badge lock", text: r.badge }) : null;
     var fresh = r["new"] && S.scope !== "new" ? h("span", { class: "badge new", text: "new" }) : null;
     var details = r.details.map(function (d) {
-      return h("div", { class: "det" }, h("span", { text: d.label + " · " }), h("div", { html: d.html }));
+      return h("div", { class: "det" }, h("span", { text: d.label + " · " }), h("div", { card: d.html }));
     });
     var row = h("div", { class: "row " + r.kind + (r.ticked ? " ticked" : ""), "data-nid": r.nid,
       "data-private": deck.private ? "1" : null });
@@ -378,19 +412,19 @@ var Sheets = (function () {
           } })));
     }
     if (r.kind === "cloze") {
-      var text = h("div", { class: "text", html: r.text });
+      var text = h("div", { class: "text", card: r.text });
       if (weak) text.appendChild(weak);
       if (fresh) text.appendChild(fresh);
       row.appendChild(h("div", { class: "full" }, text, details));
     } else {
-      var q = h("div", { class: "q", html: r.prompt });
+      var q = h("div", { class: "q", card: r.prompt });
       if (kind) q.appendChild(kind);
       if (weak) q.appendChild(weak);
       if (fresh) q.appendChild(fresh);
-      var a = h("div", { class: "a" }, h("div", { class: "ans", html: r.answer }), details);
+      var a = h("div", { class: "a" }, h("div", { class: "ans", card: r.answer }), details);
       if (r.extra) {
         var open = !!S.view.notesOpen;
-        var box = h("div", { class: "extra", html: r.extra.html, hidden: !open });
+        var box = h("div", { class: "extra", card: r.extra.html, hidden: !open });
         var label = "Note" + (r.extra.images ? " + " + plural(r.extra.images, "image") : "");
         a.appendChild(h("button", { class: "chip", type: "button", "aria-expanded": String(open), title: "Show or hide this card's extra note and pictures",
           onclick: function (e) {
@@ -465,6 +499,29 @@ var Sheets = (function () {
     });
   }
 
+  function gapsText(s) {
+    return s.gaps.map(function (x) { return String(x).trim().replace(/[.;,]+$/, ""); }).join("; ");
+  }
+
+  // the summary as Markdown, for pasting into notes
+  function summaryText(deck, g) {
+    var s = g.summary, out = ["## " + (g.name || deck.short) + " (" + deck.short + ")", ""];
+    function cell(c) { return String(c == null ? "" : c).replace(/\s*\n\s*/g, " ").replace(/\|/g, "\\|"); }
+    if (s.intro) out.push(s.intro, "");
+    s.blocks.forEach(function (b) {
+      if (b.type === "table") {
+        out.push("| " + b.columns.map(cell).join(" | ") + " |", "|" + b.columns.map(function () { return " --- "; }).join("|") + "|");
+        b.rows.forEach(function (r) { out.push("| " + r.cells.map(cell).join(" | ") + " |"); });
+      } else {
+        b.items.forEach(function (it, i) { out.push((b.type === "steps" ? (i + 1) + ". " : "- ") + it.text); });
+      }
+      out.push("");
+    });
+    if (s.gaps && s.gaps.length) out.push("Not covered by the cards: " + gapsText(s) + ".", "");
+    out.push("AI summary of " + plural(s.count || g.rows.length, "card") + ", made with Sheets.");
+    return out.join("\n");
+  }
+
   function summaryEl(deck, g) {
     var s = g.summary, key = condKey(deck, g), st = S.cond[key] || {};
     var blocks = s.blocks.map(function (b) {
@@ -489,6 +546,14 @@ var Sheets = (function () {
         h("div", { class: "sum-actions" },
           S.ai.ready ? h("button", { class: "btn small regen", type: "button", disabled: st.pending,
             onclick: function () { condense(deck, g); } }, st.pending ? "Working…" : "Regenerate") : null,
+          h("button", { class: "btn small copy", type: "button", title: "Copy this summary as text you can paste into your notes",
+            onclick: function (e) {
+              var b = e.currentTarget;
+              call("copy", { text: summaryText(deck, g) }).then(function () {
+                b.textContent = "Copied";
+                setTimeout(function () { b.textContent = "Copy"; }, 1600);
+              });
+            } }, "Copy"),
           h("button", { class: "btn small", type: "button",
             onclick: function () {
               call("ai_remove", { deck_id: deck.id, prefix: deck.grouped_by, key: g.key });
@@ -499,7 +564,7 @@ var Sheets = (function () {
       s.intro ? h("div", { class: "sum-intro", html: rich(s.intro) }) : null,
       blocks,
       s.gaps && s.gaps.length ? h("div", { class: "sum-note warn" },
-        h("strong", { text: "Not covered by your cards: " }), s.gaps.join(", ") + ". The summary only uses what your cards say.") : null);
+        h("strong", { text: "Not covered by your cards: " }), gapsText(s) + ". The summary only uses what your cards say.") : null);
   }
 
   function groupEl(deck, g) {
@@ -511,13 +576,35 @@ var Sheets = (function () {
         title: "Sends the text of these " + g.rows.length + " cards to your AI provider",
         onclick: function () { condense(deck, g); } },
         h("span", { class: "spark", html: SPARK }), st.pending ? "Condensing " + plural(g.rows.length, "card") + "…" : "Condense");
+    } else if (S.ai.ready && S.data.scope !== "all" && !deck.private && !g.summary) {
+      // summaries cover a whole section, so they are made from All cards
+      action = h("button", { class: "btn small cond", type: "button", disabled: true,
+        title: "Switch to All cards to condense this section" },
+        h("span", { class: "spark", html: SPARK }), "Condense");
     }
     var note = !g.summary && (st.error || st.none);
-    return h("div", { class: "group" },
-      h("div", { class: "ghead" }, g.name ? h("h3", { text: g.name }) : h("span", {}), action),
+    var body = h("div", { class: "gbody" },
       note ? h("div", { class: "sum-note" + (st.error ? " warn" : ""), text: st.error || ("Nothing to condense: " + st.none) }) : null,
       g.summary ? summaryEl(deck, g) : null,
       h("div", { class: "rows" }, g.rows.map(function (r) { return rowEl(r, deck); })));
+    return h("div", { class: "group" },
+      h("div", { class: "ghead" }, g.name ? h("h3", {}, foldBtn("g" + condKey(deck, g), g.name, body)) : h("span", {}), action),
+      body);
+  }
+
+  // Section and deck titles fold their cards away. Folds last until Sheets is closed.
+  function foldBtn(key, label, body) {
+    var btn = h("button", { class: "fold", type: "button", title: "Click to fold or unfold this section" },
+      h("span", { class: "caret", "aria-hidden": "true" }), h("span", { text: label }));
+    function show() {
+      var shut = !!S.fold[key];
+      body.hidden = shut;
+      btn.setAttribute("aria-expanded", String(!shut));
+      btn.classList.toggle("shut", shut);
+    }
+    btn.addEventListener("click", function () { S.fold[key] = !S.fold[key]; show(); });
+    show();
+    return btn;
   }
 
   // ---------------------------------------------------------------- sheet
@@ -641,13 +728,14 @@ var Sheets = (function () {
       kids.push(h("div", { class: "notice", id: "private-note" }, h("span", { text: "This deck is on your never-send list. Condense and Ask leave its cards out." })));
     }
     d.decks.forEach(function (deck) {
-      var sec = h("section", { class: "deck" });
+      var sec = h("section", { class: "deck" }), dbody = h("div", { class: "dbody" });
       if (!single) {
-        sec.appendChild(h("header", {}, h("h2", { text: deck.short }),
+        sec.appendChild(h("header", {}, h("h2", {}, foldBtn("d" + deck.id, deck.short, dbody)),
           h("span", { text: (deck.parents.length ? deck.parents.join(" › ") + " · " : "") + plural(deck.count, "note") }),
           deck.private && S.ai.enabled ? h("span", { class: "badge lock", text: "never sent to AI" }) : null));
       }
-      deck.groups.forEach(function (g) { sec.appendChild(groupEl(deck, g)); });
+      deck.groups.forEach(function (g) { dbody.appendChild(groupEl(deck, g)); });
+      sec.appendChild(dbody);
       kids.push(sec);
     });
     kids.push(h("div", { class: "empty", id: "nomatch", hidden: true, text: "Nothing to show: every row is filtered out or ticked." }));
@@ -744,7 +832,7 @@ var Sheets = (function () {
     put(log, kids);
     log.scrollTop = log.scrollHeight;
     var fresh = app.querySelector("#newchat");
-    if (fresh) fresh.disabled = !S.chat.length;
+    if (fresh) fresh.hidden = !S.chat.length;
   }
 
   function sendQuestion() {
@@ -1060,7 +1148,7 @@ var Sheets = (function () {
         S.started = true;
       }
       ancestorsOpen(S.tree, S.deck);
-      var scroll = h("div", { class: "scroll" }, h("div", { class: "page" }));
+      var scroll = h("div", { class: "scroll" }, h("div", { class: "pagewrap" }, h("div", { class: "page" }), pageGrip()));
       scroll.addEventListener("click", function (e) {
         var t = e.target;
         if (t.tagName === "IMG" && t.closest(".row, .sum")) openImage(t.currentSrc || t.src, t.alt);

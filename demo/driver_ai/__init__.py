@@ -157,6 +157,12 @@ class Driver:
         n_ask = yield from self.count("#ask")
         log("after turning AI on: Condense on the 9-card section only, Ask in the toolbar", n_cond == 1 and n_ask == 1, [n_cond, n_ask])
         log("turning AI on sends nothing by itself", len(fake_ai.requests) == 0, len(fake_ai.requests))
+        yield from self.js("Sheets.state.scope='new'; Sheets.selectDeck(Sheets.state.deck); 1")
+        yield 1500
+        grey = yield from self.js("JSON.stringify([].map.call(document.querySelectorAll('.cond'), function(b){ return [b.disabled, b.title]; }))")
+        log("on New, Condense shows greyed out with a hint", bool(json.loads(grey)) and all(d and "All cards" in t for d, t in json.loads(grey)), grey)
+        yield from self.js("Sheets.state.scope='all'; Sheets.selectDeck(Sheets.state.deck); 1")
+        yield 1500
 
         # 3. condense the Verbs section
         yield from self.click(".cond", 300)
@@ -167,13 +173,17 @@ class Driver:
         intro = yield from self.text(".sum-intro")
         note = yield from self.text(".sum .sum-note")
         log("Condense shows an intro, a 4-row table and the gap notice",
-            rows == 4 and intro.startswith("Ser says what something is") and "Estar in the present tense, Past tenses" in note, [rows, intro, note])
+            rows == 4 and intro.startswith("Ser says what something is") and "Estar in the present tense; Past tenses. The summary" in note, [rows, intro, note])
         body = sent()
         log("one request, with the 9 Verbs cards as plain text (no pictures, no other section)",
             len(fake_ai.requests) == 1 and "[9] " in body and "[10] " not in body and "<img" not in body
             and "verb-table" not in body and "definite article" not in body and "[image]" in body, len(fake_ai.requests))
         bold = yield from self.count(".sum td strong")
         log("AI text renders bold safely", bold == 1, bold)
+        yield from self.click(".sum .copy", 600)
+        clip = mw.app.clipboard().text()
+        log("Copy puts the summary on the clipboard as a text table",
+            clip.startswith("## ") and "| --- |" in clip and "Not covered by the cards: Estar in the present tense; Past tenses." in clip, clip[:200])
         yield from self.click(".sum tbody tr:nth-child(3) .src", 1900)
         hits = yield from self.count(".row.hit")
         log("a row's source link highlights the 3 cards it came from", hits == 3, hits)

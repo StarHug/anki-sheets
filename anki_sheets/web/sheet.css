@@ -44,6 +44,13 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 #app :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 [hidden] { display: none !important; }
 
+/* quiet scrollbars that take their colour from the theme */
+#app ::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+#app ::-webkit-scrollbar-track, #app ::-webkit-scrollbar-corner { background: transparent; }
+#app ::-webkit-scrollbar-thumb { border: 4px solid transparent; border-radius: 8px; background-clip: content-box;
+  background-color: color-mix(in srgb, var(--ink) 18%, transparent); }
+#app ::-webkit-scrollbar-thumb:hover { border-width: 3px; background-color: color-mix(in srgb, var(--ink) 40%, transparent); }
+
 /* ---------- sidebar ---------- */
 .side { flex: 0 0 264px; display: flex; flex-direction: column; gap: 12px; padding: 18px 12px;
   border-right: 1px solid var(--line); overflow-y: auto; }
@@ -51,8 +58,8 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand span { display: inline-flex; }
 .logo { width: 22px; height: 22px; flex: none; border-radius: 5px; }
-.side input { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--line2);
-  border-radius: 8px; background: var(--surface); }
+.side input:not(#x) { width: 100%; height: 34px !important; padding: 0 10px !important; border: 1px solid var(--line2) !important;
+  border-radius: 8px !important; background: var(--surface) !important; box-shadow: none !important; margin: 0 !important; }
 .sidegrip { flex: 0 0 9px; margin: 0 -5px 0 -4px; z-index: 2; position: relative; cursor: col-resize; touch-action: none; }
 .sidegrip::after { content: ""; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; }
 .sidegrip:hover::after, .sidegrip:focus-visible::after, .dragging .sidegrip::after { background: var(--accent); }
@@ -76,8 +83,8 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .seg { display: flex; padding: 3px; border-radius: 9px; background: var(--chip); }
 .seg button:not(#x) { height: 30px !important; padding: 0 12px !important; border: 0 !important; border-radius: 7px !important; background: none !important; color: var(--muted) !important; white-space: nowrap; }
 .seg button[aria-pressed="true"]:not(#x) { background: var(--surface) !important; color: var(--ink) !important; font-weight: 600 !important; box-shadow: 0 1px 2px rgba(0,0,0,.14) !important; }
-.bar .filter { flex: 1 1 160px; min-width: 120px; height: 36px; padding: 0 12px; border: 1px solid var(--line2);
-  border-radius: 9px; background: var(--surface); }
+.bar .filter:not(#x) { flex: 1 1 160px; min-width: 120px; height: 36px !important; padding: 0 12px !important; border: 1px solid var(--line2) !important;
+  border-radius: 9px !important; background: var(--surface) !important; box-shadow: none !important; margin: 0 !important; }
 #app select, .btn:not(#x) { height: 36px !important; padding: 0 12px !important; border: 1px solid var(--line2) !important; border-radius: 9px !important; background: var(--surface) !important; }
 .btn:not(#x) { white-space: nowrap; }
 .btn.primary:not(#x) { border-color: var(--accent) !important; background: var(--accent) !important; color: var(--on-accent) !important; font-weight: 600 !important; }
@@ -113,8 +120,13 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 
 /* ---------- sheet ---------- */
 .scroll { flex: 1 1 auto; overflow-y: auto; padding: 24px 28px 80px; container: sheet / inline-size; }
-.page { max-width: 940px; }
-.mode-compact .page { max-width: none; }
+.pagewrap { position: relative; max-width: var(--pw, 940px); }
+.mode-compact .pagewrap { max-width: none; }
+.pagegrip { position: absolute; top: 0; bottom: 0; right: -18px; width: 12px; cursor: col-resize; touch-action: none; }
+.pagegrip::after { content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; border-radius: 2px; background: transparent; }
+.pagegrip:hover::after, .pagegrip:focus-visible::after, .dragging .pagegrip::after { background: var(--accent); }
+.mode-compact .pagegrip { display: none; }
+.ask-head .btn:not(#x) { margin-top: 2px !important; }
 .head h1 { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 650; }
 .head .meta { margin-top: 4px; color: var(--muted); }
 .tickbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 12px; padding: 8px 12px;
@@ -128,6 +140,13 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .deck h2 { margin: 0; font-size: 21px; font-weight: 650; }
 .deck header span { color: var(--muted); }
 .group { margin-top: 20px; }
+.fold:not(#x) { display: inline-flex; align-items: baseline; gap: 7px; padding: 0 !important; border: 0 !important; background: none !important;
+  font-weight: inherit !important; letter-spacing: inherit; text-transform: inherit !important; text-align: left; }
+.deck header .fold span { color: inherit; }
+.fold .caret { flex: none; width: 0; height: 0; border: 4.5px solid transparent; border-top: 6px solid currentColor; border-bottom: 0;
+  transform: translateY(-1px); opacity: .55; transition: transform .12s; }
+.fold.shut .caret { transform: translateY(-1px) rotate(-90deg); }
+.fold:hover .caret { opacity: 1; }
 .ghead { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; margin-bottom: 4px; }
 .ghead h3 { margin: 0; font-size: 12.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
 
@@ -140,6 +159,8 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .row .full { grid-column: 1 / -1; min-width: 0; color: var(--ink2); }
 .ticks-on .row .full { grid-column: 2 / -1; }
 .row b, .row strong { font-weight: 650; color: var(--ink); }
+/* a card's own headings would otherwise tower over the sheet */
+.row :is(h1, h2, h3, h4) { margin: 0 0 .3em; font-size: 1.12em; line-height: 1.3; }
 .row img { max-width: 100%; max-height: 340px; height: auto; border-radius: 6px; cursor: zoom-in; }
 .row .extra img { max-height: none; display: block; margin: 4px 0; }
 .split { align-self: stretch; cursor: col-resize; position: relative; touch-action: none; border-radius: 4px; }
@@ -244,7 +265,7 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .src:not(#x) { padding: 0 !important; border: 0 !important; background: none !important; color: var(--accent) !important; font-size: 13px !important; text-decoration: underline; white-space: nowrap; }
 .sum-note { padding: 9px 12px; border-radius: 8px; background: var(--chip); color: var(--ink2); font-size: 14px; }
 .sum-note.warn { background: var(--warn-bg); color: var(--warn); }
-.group > .sum-note { margin: 4px 0 8px; }
+.gbody > .sum-note { margin: 4px 0 8px; }
 .mode-compact .sum { font-size: 13px; padding: 10px 12px; gap: 8px; }
 .mode-compact .sum-intro { font-size: 14px; }
 .mode-compact .sum-actions, .mode-compact .cond { display: none; }
@@ -342,11 +363,11 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
   body.nightMode #app#app:not(.theme-paper), body.night_mode #app#app:not(.theme-paper) {
     --ink: #16191d; --ink2: #2a3038; --muted: #5b6470; --line: #e3e6ea; --line2: #c9ced6; --accent: #1f5bd8; --accent-bg: #e4ebfa;
     --accent-ink: #17449f; --warn: #a04a00; --warn-bg: #fdebd8; --chip: #eef0f3; --on-accent: #fff; color-scheme: light; }
-  .side, .sidegrip, .bar, .edit:not(#x), .chip:not(#x), .notice, .snd, .ask, .overlay, .lightbox, .viewpanel, .viewveil, .tickbar,
+  .fold .caret, .side, .sidegrip, .pagegrip, .bar, .edit:not(#x), .chip:not(#x), .notice, .snd, .ask, .overlay, .lightbox, .viewpanel, .viewveil, .tickbar,
   .sum-actions, .cond, .src:not(#x), .srcc, .fatal { display: none !important; }
   .main { display: block; }
   .scroll { display: block; overflow: visible !important; padding: 0; container-type: normal; }
-  .page { max-width: none; }
+  .pagewrap { max-width: none; }
   .split::after { background: transparent !important; }
   .row { padding-right: 0; grid-template-columns: var(--qw) 24px minmax(0, 1fr); }
   .ticks-on .row { grid-template-columns: 30px var(--qw) 24px minmax(0, 1fr); }
