@@ -1,12 +1,12 @@
 var Sheets = (function () {
   var VIEW_DEFAULTS = { ticks: false, hideTicked: false, density: "comfortable", emphasis: "question",
-                        theme: "anki", notesOpen: false, split: null, side: null, page: null };
+                        theme: "anki", notesOpen: false, split: null, side: null, page: null, confetti: false };
   var S = { tree: [], deck: null, scope: "all", mode: "read", groups: {}, limit: null,
             filter: "", deckFilter: "", open: {}, data: null, view: Object.assign({}, VIEW_DEFAULTS), viewOpen: false,
             ai: { enabled: false, ready: false, never_send_decks: [], max_cards: 200 },
             fold: {}, askOpen: false, chat: [], strict: false, cond: {}, pending: {}, seq: 0 };
   var SCOPES = [["all", "All cards"], ["due", "Due"], ["new", "New"], ["weak", "Weak spots"]];
-  var MODES = [["read", "Read"], ["cover", "Cover answers"], ["compact", "Compact"]];
+  var MODES = [["read", "Read"], ["compact", "Compact"]];
   var DENSITY = [["comfortable", "Comfortable"], ["tight", "Tight"]];
   var EMPHASIS = [["question", "Bold question"], ["tint", "Tinted question"], ["answer", "Bold answer"]];
   var THEMES = [["anki", "Match Anki"], ["paper", "Paper"], ["contrast", "High contrast"]];
@@ -102,7 +102,36 @@ var Sheets = (function () {
     '<g fill="#1f3fa8"><rect x="144" y="150" width="78" height="18" rx="9"/><rect x="144" y="214" width="78" height="18" rx="9"/><rect x="144" y="278" width="78" height="18" rx="9"/><rect x="144" y="342" width="78" height="18" rx="9"/></g>' +
     '<g fill="#b9c3de"><rect x="244" y="150" width="100" height="18" rx="9"/><rect x="244" y="214" width="100" height="18" rx="9"/><rect x="244" y="278" width="100" height="18" rx="9"/><rect x="244" y="342" width="72" height="18" rx="9"/></g>' +
     '<path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/></svg>';
-  function brand() { return h("h1", { class: "brand" }, h("span", { html: LOGO }), "IchiSheet"); }
+  function brand() {
+    return h("h1", { class: "brand" },
+      h("button", { class: "brandbtn", type: "button", id: "about", title: "About IchiSheet", onclick: openAbout },
+        h("span", { html: LOGO }), "IchiSheet"));
+  }
+  function extLink(to, label, tip) {
+    return h("a", { href: "#", title: tip, onclick: function (e) { e.preventDefault(); call("link", { to: to }); } }, label);
+  }
+  // A small "about" card, opened from the logo.
+  function openAbout() {
+    if (app.querySelector(".about")) return;
+    function close() { overlay.remove(); var b = document.getElementById("about"); if (b) b.focus(); }
+    var overlay = h("div", { class: "overlay", onclick: function (e) { if (e.target === overlay) close(); },
+      onkeydown: function (e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } } },
+      h("div", { class: "modal about", role: "dialog", "aria-modal": "true", "aria-labelledby": "about-title" },
+        h("div", { class: "about-logo", html: LOGO }),
+        h("h2", { id: "about-title", text: "IchiSheet" }),
+        h("p", { class: "about-made", text: "Made by StarHug" + (S.version ? " · version " + S.version : "") }),
+        h("p", { class: "about-say" }, "Your whole deck on one sheet. “Ichi” is Japanese for “one”."),
+        h("p", { class: "about-say" }, "IchiSheet is free. If it helps you study, you can ",
+          extLink("support", "buy me a coffee", "Opens my Ko-fi page"), " or ",
+          extLink("rate", "rate it on AnkiWeb", "A thumbs up on AnkiWeb helps other students find IchiSheet"), "."),
+        h("p", { class: "about-small" },
+          extLink("issues", "Found a bug?", "Opens the issue page on GitHub"), " · ",
+          extLink("source", "Source code", "Opens the project on GitHub"), " · Open source, AGPL-3.0-or-later"),
+        h("div", { class: "modal-foot" },
+          h("button", { class: "btn primary", type: "button", id: "about-close", onclick: close }, "Close"))));
+    app.appendChild(overlay);
+    document.getElementById("about-close").focus();
+  }
   function title() { return S.home ? "IchiSheet" : S.deck ? S.deck.split("::").pop() : "All decks"; }
   function allRows() {
     var out = [];
@@ -179,7 +208,7 @@ var Sheets = (function () {
   }
 
   function mainClass() {
-    return "main mode-" + S.mode + " em-" + S.view.emphasis +
+    return "main mode-" + S.mode + (S.cover ? " mode-cover" : "") + " em-" + S.view.emphasis +
       (S.view.density === "tight" ? " dense" : "") + (S.view.ticks ? " ticks-on" : "");
   }
 
@@ -358,6 +387,9 @@ var Sheets = (function () {
       checkV("ticks", "Review ticks", "v-ticks",
         "Adds a tick box to every row so you can check off what you have read. Does not affect Anki's scheduling.",
         function () { renderSheet(true); }),
+      checkV("confetti", "Confetti", "v-confetti",
+        "A little burst of confetti when you reveal an answer in Cover answers, and a bigger one for the last answer on the sheet.",
+        function () {}),
       h("div", { class: "vrow", title: "If the wrong part of a card shows as the answer, choose here which field is the question and which is the answer" },
         h("span", { text: "Card fields" }),
         h("button", { class: "btn small", type: "button", id: "fields", disabled: !(S.data && S.data.note_types && S.data.note_types.length),
@@ -376,6 +408,7 @@ var Sheets = (function () {
             S.view = Object.assign({}, VIEW_DEFAULTS);
             S.groups = {};
             S.mode = "read";
+            S.cover = false;
             applyView();
             save();
             renderBar();
@@ -385,10 +418,11 @@ var Sheets = (function () {
         h("button", { class: "btn small", type: "button", id: "refresh",
           title: "Reload decks and cards from Anki", onclick: function () { S.viewOpen = false; init(); } }, "Refresh from Anki")),
       h("div", { class: "vsupport" },
-        h("span", { text: "IchiSheet" + (S.version ? " " + S.version : "") + " by StarHug" }),
-        link("rate", "Rate on AnkiWeb", "A thumbs up on AnkiWeb helps other students find IchiSheet"),
-        link("issues", "Report a problem", "Opens the issue page on GitHub"),
-        link("support", "Buy me a coffee", "IchiSheet is free. A coffee helps keep it maintained")));
+        h("p", {}, "IchiSheet is free. If it helps you study, you can ",
+          link("support", "buy me a coffee", "Opens my Ko-fi page"), " or ",
+          link("rate", "rate it on AnkiWeb", "A thumbs up on AnkiWeb helps other students find IchiSheet"), "."),
+        h("p", { class: "vmade" }, "Made by StarHug" + (S.version ? " · version " + S.version : "") + " · ",
+          link("issues", "Found a bug?", "Opens the issue page on GitHub"))));
     function link(to, label, tip) {
       return h("a", { href: "#", title: tip, onclick: function (e) { e.preventDefault(); call("link", { to: to }); } }, label);
     }
@@ -453,10 +487,36 @@ var Sheets = (function () {
     row.appendChild(h("button", { class: "edit", type: "button", title: "Open this note in the browser",
       onclick: function (e) { e.stopPropagation(); call("edit", { nid: r.nid }); } }, "Edit"));
     row.addEventListener("click", function (e) {
-      if (S.mode !== "cover" || e.target.closest("a, .snd") || e.target.tagName === "IMG") return;
-      row.classList.toggle("shown");
+      if (!S.cover || e.target.closest("a, .snd, .tick") || e.target.tagName === "IMG") return;
+      var shown = row.classList.toggle("shown");
+      if (shown && S.view.confetti) {
+        var left = [].some.call(app.querySelectorAll(".row"), function (r) { return !r.hidden && r.offsetParent && !r.classList.contains("shown"); });
+        if (left) confetti(e.clientX, e.clientY, 14); else confetti(window.innerWidth / 2, window.innerHeight / 3, 70);
+      }
     });
     return row;
+  }
+
+  // Confetti mode: a small burst where you reveal an answer, a bigger one for the last answer on the sheet.
+  var CONFETTI = ["#1f3fa8", "#ffc94a", "#e8590c", "#2f9e44", "#ae3ec9", "#1c7ed6"];
+  function confetti(x, y, n) {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var box = h("div", { class: "confetti", "aria-hidden": "true" }), big = n > 30;
+    for (var i = 0; i < n; i++) {
+      var bit = h("i", {}), ang = Math.random() * Math.PI * 2, dist = (big ? 140 : 46) + Math.random() * (big ? 260 : 60);
+      var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - (big ? 80 : 30), fall = (big ? 260 : 70) + Math.random() * 80;
+      bit.style.left = x + "px"; bit.style.top = y + "px";
+      bit.style.background = CONFETTI[i % CONFETTI.length];
+      if (i % 3 === 0) bit.style.borderRadius = "50%";
+      box.appendChild(bit);
+      bit.animate([
+        { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+        { transform: "translate(" + dx + "px," + dy + "px) rotate(" + (Math.random() * 540 - 270) + "deg)", opacity: 1, offset: 0.45 },
+        { transform: "translate(" + dx * 1.15 + "px," + (dy + fall) + "px) rotate(" + (Math.random() * 900 - 450) + "deg)", opacity: 0 }
+      ], { duration: (big ? 1700 : 850) + Math.random() * 300, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
+    }
+    document.body.appendChild(box);
+    setTimeout(function () { box.remove(); }, big ? 2200 : 1300);
   }
 
   function highlight(nids) {
@@ -1034,7 +1094,10 @@ var Sheets = (function () {
     var bar = app.querySelector(".bar");
     var filter = h("input", { class: "filter", type: "search", placeholder: "Filter this sheet", "aria-label": "Filter this sheet",
       title: "Type a word to show only the rows that contain it", value: S.filter, oninput: function (e) { S.filter = e.target.value; applyFilter(); } });
-    var reveal = S.mode === "cover" ? h("button", { class: "btn", type: "button", id: "reveal", title: "Show every hidden answer, or hide them all again",
+    var cover = h("button", { class: "btn" + (S.cover ? " on" : ""), type: "button", id: "cover", "aria-pressed": String(!!S.cover),
+      title: HINT.cover + ". Works in Read and Compact", onclick: toggleCover }, "Cover answers");
+    cover.setAttribute("data-mode", "cover");
+    var reveal = S.cover ? h("button", { class: "btn", type: "button", id: "reveal", title: "Show every hidden answer, or hide them all again",
       onclick: function () {
         var rows = app.querySelectorAll(".row"), on = !app.querySelector(".row.shown");
         rows.forEach(function (r) { r.classList.toggle("shown", on); });
@@ -1046,7 +1109,7 @@ var Sheets = (function () {
     put(bar, [
       seg(SCOPES, "scope", "Which cards", function (v) { S.scope = v; S.limit = null; S.maxChars = null; save(); renderBar(); load(); }),
       seg(MODES, "mode", "View mode", setMode),
-      reveal, filter,
+      cover, reveal, filter,
       h("button", { class: "btn" + (S.viewOpen ? " on" : ""), type: "button", id: "view", "aria-expanded": String(S.viewOpen),
         title: "Layout options: sections, spacing, emphasis, theme, notes and review ticks",
         onclick: function () { S.viewOpen = !S.viewOpen; renderView(); renderBar(); } }, "View"),
@@ -1055,6 +1118,14 @@ var Sheets = (function () {
       askBtn,
       h("button", { class: "btn primary", type: "button", id: "study", title: "Open this deck in Anki's normal flashcard review", onclick: function () { call("study", { deck: S.deck }); } },
         S.deck ? "Study this deck" : "Go to decks")]);
+  }
+
+  function toggleCover() {
+    S.cover = !S.cover;
+    applyView();
+    app.querySelectorAll(".row.shown").forEach(function (r) { r.classList.remove("shown"); });
+    save();
+    renderBar();
   }
 
   function setMode(v) {
@@ -1068,7 +1139,7 @@ var Sheets = (function () {
   // ---------------------------------------------------------------- data
 
   function save() {
-    call("state", { deck: S.deck, scope: S.scope, mode: S.mode, groups: S.groups, view: S.view,
+    call("state", { deck: S.deck, scope: S.scope, mode: S.mode, cover: !!S.cover, groups: S.groups, view: S.view,
       home: !!S.home, pending: loading ? (S.deck || "All decks") : null });
   }
 
@@ -1148,7 +1219,8 @@ var Sheets = (function () {
       if (!S.started) {
         S.deck = known ? st.deck : null;
         S.scope = st.scope || "all";
-        S.mode = st.mode || "read";
+        S.cover = st.mode === "cover" || !!st.cover;   // "cover" used to be a third mode
+        S.mode = st.mode === "compact" ? "compact" : "read";
         S.groups = Object.assign({}, st.groups || {});
         S.view = Object.assign({}, VIEW_DEFAULTS, st.view || {});
         // start on a deck only if one was open last time and it finished opening

@@ -284,7 +284,7 @@ class Driver:
         yield from self.click('button[data-mode="cover"]', 1300)
         shown = yield from self.js("getComputedStyle(document.querySelector('.sum')).display")
         log("Cover answers hides the summary so it can't give answers away", shown == "none", shown)
-        yield from self.click('button[data-mode="read"]', 900)
+        yield from self.click('button[data-mode="cover"]', 900)
 
         from anki_sheets import dialog
         path = os.path.join(os.path.dirname(dialog.__file__), "user_files", "summaries.json")

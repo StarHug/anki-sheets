@@ -175,8 +175,23 @@ class Driver:
         s = yield from self.snapshot()
         log("clicking a row reveals just that answer", s["blurred"] == 8, s["blurred"])
 
-        # 6. weak spots
+        # 5b. Cover answers also works in Compact, and Confetti mode fires on a reveal
+        yield from self.click('button[data-mode="compact"]', 900)
+        both = yield from self.js("JSON.stringify([document.querySelector('.main').className.indexOf('mode-compact') >= 0, document.querySelector('.main').className.indexOf('mode-cover') >= 0, document.querySelectorAll('.row.shown').length])")
+        log("Cover answers stays on in Compact", json.loads(both)[:2] == [True, True], both)
+        yield from self.js("Sheets.state.view.confetti = true; 1")
+        yield from self.click(".row:nth-child(2) .q", 250)
+        bits = yield from self.js("document.querySelectorAll('.confetti i').length")
+        yield 1600
+        after = yield from self.js("document.querySelectorAll('.confetti').length")
+        yield from self.js("Sheets.state.view.confetti = false; 1")
+        yield from self.click(".row:nth-child(4) .q", 250)
+        off = yield from self.js("document.querySelectorAll('.confetti i').length")
+        log("Confetti mode shows a small burst on a reveal, cleans up, and is silent when off", bits == 14 and after == 0 and off == 0, [bits, after, off])
         yield from self.click('button[data-mode="read"]', 600)
+
+        # 6. weak spots
+        yield from self.click('button[data-mode="cover"]', 600)
         yield from self.click('button[data-scope="weak"]', 2000)
         mark("weak")
         s = yield from self.snapshot()

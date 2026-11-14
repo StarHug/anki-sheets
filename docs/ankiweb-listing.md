@@ -21,7 +21,7 @@ Flashcards are great for testing yourself, but sometimes you just want to *read*
 **What you get**
 
 - **One page per deck.** Sub-decks are stacked under their own headings. Rows are split into sections by your tags (a tag family such as `topic::…`, or plain tags), or not at all.
-- **Three ways to read.** *Read* shows everything. *Cover answers* hides answers until you click a row, for a quick self-test. *Compact* is a dense multi-column layout for printing.
+- **Read, self-test, or print.** *Read* shows everything. *Compact* is a dense multi-column layout for printing. *Cover answers* works with either: it hides answers until you click a row, for a quick self-test.
 - **Filters.** All cards, Due, New, or Weak spots (cards you keep forgetting, worst first). Type in the filter box to narrow further.
 - **Notes and pictures.** Extra notes and pictures sit behind a "Note" button, and any picture opens full size. Sound files get a play button. Formulas (MathJax) and image-occlusion cards are supported.
 - **Review ticks (optional).** Turn on tick boxes to check off rows as you read them. Ticks are a personal checklist and do not affect scheduling.
@@ -77,6 +77,8 @@ If you'd like to help cover the cost of building and maintaining it, you can buy
 Thank you!
 
 **Changelog**
+
+1.2.0: Cover answers now works in Compact too (it is a switch next to Read and Compact). Click the logo for an About card. Optional Confetti mode in View: a little burst when you reveal an answer, off by default. The note at the bottom of the View panel is quieter. If Anki has updated IchiSheet but not been restarted yet, you now get a "restart Anki" note instead of an error window.
 
 1.1.0: new name. Sheets is now IchiSheet ("ichi" is Japanese for "one": your whole deck on one sheet). Nothing else changes; find it under Tools → IchiSheet.
 

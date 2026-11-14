@@ -230,6 +230,20 @@ class Driver:
         log("deck search shows the deck's own name first, its parents underneath", json.loads(hit)[0] == "Particles" and "Grammar" in json.loads(hit)[1], hit)
         yield from self.js("var i=document.querySelector('.side input'); i.value=''; i.dispatchEvent(new Event('input')); 1")
 
+        yield from self.click("#about", 500)
+        ab = yield from self.js("var a=document.querySelector('.about'); a ? a.textContent : ''")
+        yield from self.click("#about-close", 400)
+        gone = yield from self.js("!document.querySelector('.about')")
+        log("clicking the logo opens an About card, and Close dismisses it",
+            "Made by StarHug" in ab and "buy me a coffee" in ab and gone, ab[:120])
+        yield from self.js("pycmd('sheets:not_a_real_command:{}'); 1")
+        yield 400
+        import aqt.utils
+        tip = getattr(aqt.utils, "_tooltipLabel", None)
+        alive = yield from self.js("document.querySelectorAll('.row').length > 0")
+        log("a command the running code does not know asks for a restart instead of crashing",
+            bool(tip) and "Restart Anki" in tip.text() and alive, tip.text() if tip else None)
+
         # 4. View menu: spacing, emphasis, theme
         yield from self.click("#view", 1200)
         mark("view")

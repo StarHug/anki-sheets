@@ -55,6 +55,20 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .side { flex: 0 0 264px; display: flex; flex-direction: column; gap: 12px; padding: 18px 12px;
   border-right: 1px solid var(--line); overflow-y: auto; }
 .side h1 { margin: 0 8px; font-size: 17px; font-weight: 650; }
+.brandbtn:not(#x) { display: flex; align-items: center; gap: 8px; padding: 2px 6px 2px 2px !important; margin: -2px -6px -2px -2px !important; border: 0 !important;
+  border-radius: 8px !important; background: none !important; font-weight: inherit !important; }
+.brandbtn:not(#x):hover { background: var(--chip) !important; }
+.modal.about { max-width: 400px; margin-top: 8vh; text-align: center; }
+.about-logo .logo { width: 64px; height: 64px; border-radius: 15px; }
+.about h2 { margin: 10px 0 2px; }
+.about p { margin: 0; }
+.about-made { color: var(--muted); font-size: 13px; }
+.about-say { margin-top: 12px !important; line-height: 1.5; }
+.about-small { margin-top: 14px !important; color: var(--muted); font-size: 12px; }
+.about a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 2px; }
+.about a:hover { color: var(--accent); }
+.about-small a { color: inherit; }
+.about .modal-foot { justify-content: center; }
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand span { display: inline-flex; }
 .logo { width: 22px; height: 22px; flex: none; border-radius: 5px; }
@@ -116,8 +130,15 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .vrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .vrow > span { font-weight: 600; font-size: 13.5px; }
 .vrow select { height: 32px; }
-.vsupport { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
-.vsupport a { color: var(--accent); }
+/* a footnote, not a call to action: same grey as the text around it, colour only on hover */
+.vsupport { margin-top: 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.vsupport p { margin: 0; }
+.vsupport .vmade { margin-top: 3px; font-size: 11px; }
+.vsupport .vmade a { color: inherit; }
+.vsupport a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 2px; }
+.vsupport a:hover, .vsupport a:focus-visible { color: var(--accent); text-decoration-color: currentColor; }
+.vsupport a:focus { outline: none; }
+.vsupport a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 .vfoot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line); }
 
 /* ---------- sheet ---------- */
@@ -225,6 +246,8 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 .mode-cover .row:not(.shown) .cz { color: transparent; background: var(--line2); user-select: none; }
 .mode-cover .row:not(.shown) .cz img { visibility: hidden; }
 .mode-cover .row:not(.shown) .full .det { filter: blur(7px); opacity: .45; }
+.confetti { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; width: 7px; height: 10px; margin: -5px 0 0 -3px; border-radius: 1.5px; will-change: transform, opacity; }
 .mode-cover .sum { display: none; }  /* a summary would give the answers away */
 
 /* ---------- compact mode: cheat-sheet density ---------- */
@@ -365,7 +388,7 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
   body.nightMode #app#app:not(.theme-paper), body.night_mode #app#app:not(.theme-paper) {
     --ink: #16191d; --ink2: #2a3038; --muted: #5b6470; --line: #e3e6ea; --line2: #c9ced6; --accent: #1f5bd8; --accent-bg: #e4ebfa;
     --accent-ink: #17449f; --warn: #a04a00; --warn-bg: #fdebd8; --chip: #eef0f3; --on-accent: #fff; color-scheme: light; }
-  .fold .caret, .side, .sidegrip, .pagegrip, .bar, .edit:not(#x), .chip:not(#x), .notice, .snd, .ask, .overlay, .lightbox, .viewpanel, .viewveil, .tickbar,
+  .confetti, .fold .caret, .side, .sidegrip, .pagegrip, .bar, .edit:not(#x), .chip:not(#x), .notice, .snd, .ask, .overlay, .lightbox, .viewpanel, .viewveil, .tickbar,
   .sum-actions, .cond, .src:not(#x), .srcc, .fatal { display: none !important; }
   .main { display: block; }
   .scroll { display: block; overflow: visible !important; padding: 0; container-type: normal; }

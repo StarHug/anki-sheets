@@ -111,7 +111,12 @@ class SheetDialog(QDialog):
         _, name, *rest = cmd.split(":", 2)
         try:
             arg = json.loads(rest[0]) if rest and rest[0] else {}
-            return getattr(self, "cmd_" + name)(arg)
+            handler = getattr(self, "cmd_" + name, None)
+            if handler is None:
+                # the page is newer than the running code: Anki updated the add-on but has not restarted
+                tooltip("IchiSheet was updated. Restart Anki to finish the update.", period=6000, parent=self)
+                return None
+            return handler(arg)
         except Exception as e:
             # never leave the page waiting on a reply: hand the problem back so it can be shown
             import traceback
@@ -231,10 +236,11 @@ class SheetDialog(QDialog):
         "rate": "https://ankiweb.net/shared/info/2018832541",
         "issues": "https://github.com/StarHug/anki-sheets/issues",
         "support": "https://ko-fi.com/starsight",
+        "source": "https://github.com/StarHug/anki-sheets",
     }
 
     def cmd_link(self, arg: dict) -> None:
-        url = self.LINKS.get(str(arg.get("to")))  # only these three addresses, never one from the page
+        url = self.LINKS.get(str(arg.get("to")))  # only these fixed addresses, never one from the page
         if url:
             openLink(url)
 
