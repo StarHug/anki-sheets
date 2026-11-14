@@ -383,7 +383,15 @@ var Sheets = (function () {
             if (S.home) renderSheet(); else load();
           } }, "Reset view to defaults"),
         h("button", { class: "btn small", type: "button", id: "refresh",
-          title: "Reload decks and cards from Anki", onclick: function () { S.viewOpen = false; init(); } }, "Refresh from Anki")));
+          title: "Reload decks and cards from Anki", onclick: function () { S.viewOpen = false; init(); } }, "Refresh from Anki")),
+      h("div", { class: "vsupport" },
+        h("span", { text: "Sheets" + (S.version ? " " + S.version : "") }),
+        link("rate", "Rate on AnkiWeb", "A thumbs up on AnkiWeb helps other students find Sheets"),
+        link("issues", "Report a problem", "Opens the issue page on GitHub"),
+        link("support", "Buy me a coffee", "Sheets is free. A coffee helps keep it maintained")));
+    function link(to, label, tip) {
+      return h("a", { href: "#", title: tip, onclick: function (e) { e.preventDefault(); call("link", { to: to }); } }, label);
+    }
     panel.style.top = (app.querySelector(".bar").offsetHeight + 6) + "px";
     main.appendChild(h("div", { class: "viewveil", onclick: close }));
     main.appendChild(panel);
@@ -1133,6 +1141,7 @@ var Sheets = (function () {
   function init() {
     return call("init").then(function (r) {
       S.tree = r.tree;
+      S.version = r.version || "";
       S.ai = r.ai;
       var st = r.state || {};
       var known = flat(S.tree, []).some(function (n) { return n.full === st.deck; });

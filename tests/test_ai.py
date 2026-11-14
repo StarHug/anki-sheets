@@ -136,6 +136,19 @@ def test_answer_cut_off_twice_gives_the_usual_error(col, server):
         ai.condense(dict(compat(server), model="cut-always"), "Verbs (Ser and Estar)", cards)
 
 
+def test_key_is_never_sent_over_plain_http_to_the_internet():
+    for url in ("http://api.example.com/v1", "http://8.8.8.8/v1"):
+        with pytest.raises(ai.AIError, match="https://"):
+            ai.check_secure(url, has_key=True)
+    for url in ("https://api.example.com/v1", "http://localhost:11434/v1", "http://127.0.0.1:1234/v1",
+                "http://192.168.1.20:11434/v1", "http://10.0.0.5/v1", "http://mybox.local:11434/v1", "http://[::1]:8080/v1"):
+        ai.check_secure(url, has_key=True)
+    ai.check_secure("http://api.example.com/v1", has_key=False)  # no key, nothing secret to leak
+    with pytest.raises(ai.AIError, match="unencrypted"):
+        ai.test_connection({"enabled": True, "provider": "openai_compatible", "base_url": "http://api.example.com/v1",
+                            "model": "m", "api_key": "secret"})
+
+
 def test_trailing_commas_and_code_fences_are_tolerated(col, server):
     cards = sheet.ai_cards(col, nids(col, GRAMMAR, "topic::verbs"))["cards"]
     fake_ai.requests.clear()

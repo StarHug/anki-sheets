@@ -8,10 +8,12 @@ question.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import re
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -95,9 +97,30 @@ def call_model(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int 
 
 
 
+def _on_this_network(host: str) -> bool:
+    """This computer or the home/office network: a plain http address is fine there."""
+    host = (host or "").strip("[]").lower()
+    if host in ("localhost",) or host.endswith((".localhost", ".local", ".lan", ".home.arpa")):
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_link_local
+
+
+def check_secure(url: str, has_key: bool) -> None:
+    """Refuse to send an API key unencrypted to a server on the internet."""
+    u = urllib.parse.urlsplit(url or "")
+    if has_key and u.scheme == "http" and not _on_this_network(u.hostname or ""):
+        raise AIError("This server address starts with http://, which would send your API key unencrypted. "
+                      "Use the https:// address your provider gives. (http:// is fine for a model on your own computer or network.)")
+
+
 def _complete(ai_cfg: dict, system: str, messages: list[dict], max_tokens: int) -> tuple[str, bool]:
     """The reply text, and whether the model stopped because it hit the length limit."""
     c = merged(ai_cfg)
+    check_secure(c["base_url"] or ANTHROPIC_URL, bool(c["api_key"]))
     model = c["model"] or DEFAULT_MODELS.get(c["provider"], "")
     if c["provider"] == "anthropic":
         out = _post(

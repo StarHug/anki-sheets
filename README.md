@@ -26,4 +26,4 @@ Sheets is free. If it saves you time and you'd like to help cover the cost of ma
 
 ## Licence
 
-Licensed under the GNU Affero General Public License v3.0 or later, with additional terms: forks must keep the credit and support link, and must not claim to be the original. See `LICENSE`.
+The code is licensed under the GNU Affero General Public License v3.0 or later, with additional terms: forks must keep the credit and support link, and must not claim to be the original. The StarHug and Sheets logos and the images in `docs/` are not covered by that licence; all rights reserved. See `LICENSE`.

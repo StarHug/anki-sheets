@@ -7,7 +7,7 @@ from typing import Any
 import aqt
 from aqt import mw
 from aqt.qt import QDialog, QMarginsF, QPageLayout, QPageSize, Qt, QVBoxLayout
-from aqt.utils import getSaveFile, restoreGeom, saveGeom, tooltip
+from aqt.utils import getSaveFile, openLink, restoreGeom, saveGeom, tooltip
 from aqt.webview import AnkiWebView
 
 from . import ai, sheet
@@ -71,6 +71,14 @@ def group_fingerprint(nids: list[int]) -> str:
     return ai.fingerprint([tuple(r) for r in mw.col.db.all("select id, mod from notes where id in (%s)" % ids)])
 
 
+def _version() -> str:
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "manifest.json"), encoding="utf-8") as f:
+            return str(json.load(f).get("human_version", ""))
+    except (OSError, ValueError):
+        return ""
+
+
 def _where(c: dict) -> tuple:
     """Which server a saved key belongs to."""
     return (c.get("provider"), (c.get("base_url") or "").strip().rstrip("/"))
@@ -130,7 +138,7 @@ class SheetDialog(QDialog):
         state = dict(mw.pm.profile.get("ankiSheets", {}))
         if self.initial_deck:
             state["deck"] = self.initial_deck
-        return {"tree": sheet.deck_tree(mw.col), "state": state, "ai": self.ai_public()}
+        return {"tree": sheet.deck_tree(mw.col), "state": state, "ai": self.ai_public(), "version": _version()}
 
     def cmd_load(self, arg: dict) -> dict:
         import time
@@ -218,6 +226,17 @@ class SheetDialog(QDialog):
             mw.moveToState("deckBrowser")
         mw.activateWindow()
         mw.raise_()
+
+    LINKS = {
+        "rate": "https://ankiweb.net/shared/info/2018832541",
+        "issues": "https://github.com/StarHug/anki-sheets/issues",
+        "support": "https://ko-fi.com/starsight",
+    }
+
+    def cmd_link(self, arg: dict) -> None:
+        url = self.LINKS.get(str(arg.get("to")))  # only these three addresses, never one from the page
+        if url:
+            openLink(url)
 
     def cmd_copy(self, arg: dict) -> None:
         mw.app.clipboard().setText(str(arg.get("text") or ""))

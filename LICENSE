@@ -706,7 +706,17 @@ version 3 ("AGPL"), for the program "Sheets" by StarHug ("the Program").
    Anki" to endorse or promote a modified version, other than in the
    attribution required above.
 
-4. Keeping these terms.
+4. Logos and images (AGPL Section 7(e)).
+
+   The StarHug and Sheets logos (including the logo drawn inside the
+   Program), and the images in the docs/ folder (banner, cover, icon,
+   screenshots and demo recording), are not licensed under the AGPL. All
+   rights in them are reserved by the copyright holder. A modified version
+   must not use them, or anything confusingly similar, as its own logo,
+   icon or artwork. This does not limit fair use, such as showing them
+   when writing about or reviewing Sheets.
+
+5. Keeping these terms.
 
    Any copy of the Program or work based on it that you convey must include
    this licence file in full, including these Additional Terms.
