@@ -1,4 +1,4 @@
-"""Demo driver: runs inside real Anki, clicks through the Sheets add-on with the
+"""Demo driver: runs inside real Anki, clicks through the IchiSheet add-on with the
 real mouse pointer, checks what is on screen at each step, then quits.
 Not part of the add-on."""
 
@@ -122,8 +122,8 @@ class Driver:
 
         # 1. open from the Tools menu, like a user would
         menu = mw.form.menuTools
-        action = next(a for a in menu.actions() if a.text() == "Sheets")
-        log("Tools menu has a Sheets entry", True, action.shortcut().toString())
+        action = next(a for a in menu.actions() if a.text() == "IchiSheet")
+        log("Tools menu has a IchiSheet entry", True, action.shortcut().toString())
         bar = mw.form.menubar
         rect = bar.actionGeometry(menu.menuAction())
         yield from self.glide(bar, rect.center())
@@ -139,7 +139,7 @@ class Driver:
         yield 2600
         mark("opened")
         s = yield from self.snapshot()
-        log("sheet window opens on a start page, not a heavy All decks load", s["title"] == "Sheets" and s["rows"] == 0, s)
+        log("sheet window opens on a start page, not a heavy All decks load", s["title"] == "IchiSheet" and s["rows"] == 0, s)
         yield from self.click('.dk[data-deck=""]', 1500)
         s = yield from self.snapshot()
         log("All decks shows every note", s["title"] == "All decks" and s["rows"] == 19, s)

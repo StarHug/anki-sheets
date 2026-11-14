@@ -87,7 +87,7 @@ def _where(c: dict) -> tuple:
 class SheetDialog(QDialog):
     def __init__(self, deck_id: int | None = None) -> None:
         super().__init__(None, Qt.WindowType.Window)
-        self.setWindowTitle("Sheets")
+        self.setWindowTitle("IchiSheet")
         self.resize(1180, 800)
         restoreGeom(self, "ankiSheets")
         self.initial_deck = mw.col.decks.name(deck_id) if deck_id else None

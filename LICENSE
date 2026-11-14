@@ -1,10 +1,13 @@
-Sheets (Anki add-on)
+IchiSheet (Anki add-on, formerly "Sheets")
 Copyright (C) 2026 Andy Pham (StarHug)
 
 This program is licensed under the GNU Affero General Public License,
 version 3 or (at your option) any later version ("AGPL"), together with the
 Additional Terms set out at the end of this file, as permitted by Section 7
 of the AGPL.
+
+Unless noted otherwise, this licence applies to every file in the Program.
+The logos and images are excluded; see Additional Term 5.
 
 The full text of the AGPL follows. The Additional Terms come after it.
 
@@ -677,46 +680,82 @@ For more information on this, and how to apply and follow the GNU AGPL, see
                 ADDITIONAL TERMS APPLICABLE TO THIS PROGRAM
                    UNDER SECTION 7 OF THE GNU AGPL VERSION 3
 
-These Additional Terms supplement the GNU Affero General Public License,
-version 3 ("AGPL"), for the program "Sheets" by StarHug ("the Program").
+These Additional Terms supplement and modify the GNU Affero General Public
+License, version 3 ("AGPL"), for the program "IchiSheet" (formerly "Sheets")
+by StarHug ("the Program"). In addition to the terms of the AGPL, the Program
+is subject to the further restrictions below.
 
-1. Origin of the Program (AGPL Section 7(c)).
+1. Trademark and publicity rights (AGPL Section 7(e)).
 
-   You must not misrepresent the origin of the Program. You must not claim
-   that you wrote the original Program. Modified versions must be clearly
+   Except as expressly provided here, no trademark or publicity rights are
+   granted. This licence does NOT give you any right, title or interest in
+   the names "StarHug", "IchiSheet" or "Sheets for Anki", or in the StarHug
+   and IchiSheet logos.
+
+   You are granted only a limited, non-exclusive right to use the names
+   "StarHug" and "IchiSheet" as part of preserving the legal notices and
+   author attribution within the Program, and within the Appropriate Legal
+   Notices shown by works that contain it.
+
+2. Origin of the Program (AGPL Section 7(c)).
+
+   The origin of the Program must not be misrepresented. You must not claim
+   that you wrote the original Program. Modified versions must be plainly
    marked as modified and must not be presented as the original Program.
 
-2. Author attribution (AGPL Section 7(b)).
+3. Legal notices and author attribution (AGPL Section 7(b)).
 
-   Every copy of the Program, and every work based on it, that you convey
-   must keep the copyright and licence notices of the Program, and must
-   include the following attribution in its Appropriate Legal Notices:
+   You must reproduce faithfully all trademark, copyright and other
+   proprietary and legal notices on every copy of the Program, and any other
+   required author attributions. Legal notices or author attributions shown
+   as part of the user interface must be kept as such.
 
-       Based on the Anki add-on "Sheets" by StarHug.
+   In addition, every copy of the Program, and every work based on it, that
+   you convey must include the following attribution in its Appropriate
+   Legal Notices:
+
+       Based on the Anki add-on "IchiSheet" by StarHug.
        Support the original author: https://ko-fi.com/starsight
 
-   "Sheets" must link to https://github.com/StarHug/anki-sheets where the
-   medium allows links. The same attribution must appear in the README or
-   public description of the work (for example its AnkiWeb listing or its
+   "IchiSheet" must be a link to https://github.com/StarHug/anki-sheets and
+   the support line must be a link to https://ko-fi.com/starsight, wherever
+   the medium allows links. The same attribution must appear in the README
+   or public description of the work (for example its AnkiWeb listing or its
    repository front page).
 
-3. Names (AGPL Section 7(d) and 7(e)).
+4. Use of names for publicity (AGPL Section 7(d)).
 
-   This licence gives you no right to use the names "StarHug" or "Sheets for
-   Anki" to endorse or promote a modified version, other than in the
-   attribution required above.
+   Outside the legal notices and attribution above, neither the name of the
+   copyright holder, nor the names "StarHug" or "IchiSheet", nor the names
+   of the Program's contributors, sponsors, supporters or patrons may be
+   used to endorse or promote products derived from the Program without
+   specific prior written permission.
 
-4. Logos and images (AGPL Section 7(e)).
+5. Logos and images (AGPL Section 7(e)).
 
-   The StarHug and Sheets logos (including the logo drawn inside the
+   The StarHug and IchiSheet logos (including the logo drawn inside the
    Program), and the images in the docs/ folder (banner, cover, icon,
    screenshots and demo recording), are not licensed under the AGPL. All
    rights in them are reserved by the copyright holder. A modified version
    must not use them, or anything confusingly similar, as its own logo,
    icon or artwork. This does not limit fair use, such as showing them
-   when writing about or reviewing Sheets.
+   when writing about or reviewing IchiSheet.
 
-5. Keeping these terms.
+6. Indemnification (AGPL Section 7(f)).
+
+   If you convey the Program or a work based on it and agree with any
+   recipient that you will assume liability for it, you agree to indemnify,
+   defend and hold harmless the other licensors and authors of that work
+   against any damages, claims, losses, lawsuits, judgments and expenses
+   (including reasonable legal fees) arising from, or connected with, the
+   liability you assumed.
+
+7. Keeping these terms.
 
    Any copy of the Program or work based on it that you convey must include
    this licence file in full, including these Additional Terms.
+
+------------------------------------------------------------------------------
+
+Questions about this licence, or reports of a breach of these terms, can be
+raised at https://github.com/StarHug/anki-sheets/issues

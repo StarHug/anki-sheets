@@ -1,6 +1,6 @@
-# Sheets (Anki add-on)
+# IchiSheet by StarHug (Anki add-on)
 
-![Sheets](docs/brand/banner.png)
+![IchiSheet](docs/brand/banner.png)
 
 Install from AnkiWeb: https://ankiweb.net/shared/info/2018832541 (code `2018832541`).
 
@@ -20,10 +20,10 @@ Bugs and ideas: https://github.com/StarHug/anki-sheets/issues
 
 ## Support
 
-Sheets is free. If it saves you time and you'd like to help cover the cost of maintaining it, you can buy me a coffee:
+IchiSheet is free. If it saves you time and you'd like to help cover the cost of maintaining it, you can buy me a coffee:
 
 <a href="https://ko-fi.com/starsight"><img height="54" src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" alt="Buy me a coffee at ko-fi.com"></a>
 
 ## Licence
 
-The code is licensed under the GNU Affero General Public License v3.0 or later, with additional terms: forks must keep the credit and support link, and must not claim to be the original. The StarHug and Sheets logos and the images in `docs/` are not covered by that licence; all rights reserved. See `LICENSE`.
+The code is licensed under the GNU Affero General Public License v3.0 or later, with additional terms: forks must keep the credit and support link (including in their interface), must not claim to be the original, and get no rights to the StarHug or IchiSheet names. The StarHug and IchiSheet logos and the images in `docs/` are not covered by that licence; all rights reserved. See `LICENSE`.

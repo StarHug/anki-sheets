@@ -1,6 +1,6 @@
-"""Sheets: read any deck as one scrollable page.
+"""IchiSheet: read any deck as one scrollable page.
 
-Tools > Sheets, or the gear menu next to a deck > View as Sheet.
+Tools > IchiSheet, or the gear menu next to a deck > View as Sheet.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ if mw is not None:
     from .dialog import open_sheet, close_sheet
 
     def _menu() -> None:
-        action = QAction("Sheets", mw)
+        action = QAction("IchiSheet", mw)
         action.setShortcut(QKeySequence("Ctrl+Shift+E"))
         action.triggered.connect(lambda: open_sheet())
         mw.form.menuTools.addAction(action)

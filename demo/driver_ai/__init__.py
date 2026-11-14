@@ -128,7 +128,7 @@ class Driver:
         yield 2000
         notes_before = mw.col.note_count()
         cards_before = mw.col.db.all("select id, mod, due, ivl, reps, lapses from cards")
-        next(a for a in mw.form.menuTools.actions() if a.text() == "Sheets").trigger()
+        next(a for a in mw.form.menuTools.actions() if a.text() == "IchiSheet").trigger()
         yield 500
         self.dlg.setGeometry(0, 0, 1280, 800)
         yield 2200

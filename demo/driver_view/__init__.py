@@ -152,7 +152,7 @@ class Driver:
         notes_before = mw.col.note_count()
         cards_before = mw.col.db.all("select id, mod, due, ivl, reps, lapses from cards")
         col_mod = mw.col.db.scalar("select mod from col")
-        next(a for a in mw.form.menuTools.actions() if a.text() == "Sheets").trigger()
+        next(a for a in mw.form.menuTools.actions() if a.text() == "IchiSheet").trigger()
         yield 500
         self.dlg.setGeometry(0, 0, 1280, 800)
         yield 2200
@@ -448,13 +448,13 @@ class Driver:
         mw.pm.profile["ankiSheets"] = dict(saved, pending=SPELLING)
         self.dlg.reject()
         yield 500
-        next(a for a in mw.form.menuTools.actions() if a.text() == "Sheets").trigger()
+        next(a for a in mw.form.menuTools.actions() if a.text() == "IchiSheet").trigger()
         yield 500
         self.dlg.setGeometry(0, 0, 1280, 800)
         yield 2200
         note = yield from self.text("#recovered")
         rows = yield from self.count(".row")
-        log("after an unfinished load, Sheets starts on the start page and says why", rows == 0 and "did not finish opening" in note, [rows, note])
+        log("after an unfinished load, IchiSheet starts on the start page and says why", rows == 0 and "did not finish opening" in note, [rows, note])
         yield from self.js("Sheets.selectDeck(%s); 1" % json.dumps(SPELLING))
         yield 1800
         hover = yield from self.js("document.querySelector('.head .meta').title")

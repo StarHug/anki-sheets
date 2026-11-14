@@ -1,16 +1,18 @@
 # AnkiWeb listing (draft)
 
-**Title:** Sheets: read a whole deck as a cheat sheet (skim, self-test, print)
+**Title:** IchiSheet by StarHug: read a deck as a cheat sheet (skim, self-test, print)
 
 **Tags:** sheet cheatsheet overview reading print pdf browse list export study
 
 **Description:**
 
-<img src="https://raw.githubusercontent.com/StarHug/anki-sheets/main/docs/brand/banner.png" alt="Sheets: read a whole Anki deck as a cheat sheet">
+<img src="https://raw.githubusercontent.com/StarHug/anki-sheets/main/docs/brand/banner.png" alt="IchiSheet: read a whole Anki deck as a cheat sheet">
 
-Flashcards are great for testing yourself, but sometimes you just want to *read* a deck: skim today's material, preview new cards before studying them, or print a cheat sheet. Sheets shows any deck as one scrollable page, with the question on the left and the answer on the right. Reading a sheet never changes your scheduling.
+*IchiSheet was called Sheets until version 1.1.*
 
-**To install:** in Anki, Tools → Add-ons → Get Add-ons, and paste the code **2018832541**. Then open it from Tools → Sheets, or the gear menu next to a deck → View as Sheet.
+Flashcards are great for testing yourself, but sometimes you just want to *read* a deck: skim today's material, preview new cards before studying them, or print a cheat sheet. IchiSheet shows any deck as one scrollable page, with the question on the left and the answer on the right. Reading a sheet never changes your scheduling.
+
+**To install:** in Anki, Tools → Add-ons → Get Add-ons, and paste the code **2018832541**. Then open it from Tools → IchiSheet, or the gear menu next to a deck → View as Sheet.
 
 <img src="https://raw.githubusercontent.com/StarHug/anki-sheets/main/docs/screenshots/demo.gif" alt="Opening a deck as a sheet, expanding a note, then covering the answers and revealing them one by one">
 
@@ -46,7 +48,7 @@ With your own API key (Anthropic, or any OpenAI-compatible server including a lo
 
 *Condense: a section of cards turned into a summary.*
 
-**Private by default.** Sheets works fully offline. The AI features are optional and off by default. If you turn them on, card text goes straight from your computer to the AI provider you chose, and only when you ask for it. Pictures and audio are never sent, and you can mark any deck as private.
+**Private by default.** IchiSheet works fully offline. The AI features are optional and off by default. If you turn them on, card text goes straight from your computer to the AI provider you chose, and only when you ask for it. Pictures and audio are never sent, and you can mark any deck as private.
 
 **Good to know**
 
@@ -66,7 +68,7 @@ The source code is on [GitHub](https://github.com/StarHug/anki-sheets). Open sou
 
 **Support this add-on**
 
-Sheets is free and will stay free. If it saves you time, please [give it a thumbs up](https://ankiweb.net/shared/review/2018832541): it helps other people find it.
+IchiSheet is free and will stay free. If it saves you time, please [give it a thumbs up](https://ankiweb.net/shared/review/2018832541): it helps other people find it.
 
 If you'd like to help cover the cost of building and maintaining it, you can buy me a coffee:
 
@@ -76,13 +78,15 @@ Thank you!
 
 **Changelog**
 
+1.1.0: new name. Sheets is now IchiSheet ("ichi" is Japanese for "one": your whole deck on one sheet). Nothing else changes; find it under Tools → IchiSheet.
+
 1.0.4: an API key is never sent unencrypted to a server on the internet. A short About row at the bottom of the View panel: version, rate, report a problem, buy me a coffee.
 
-1.0.3: security fix: code hidden in a card (for example from a shared deck) can no longer run inside Sheets, and a saved API key is only ever sent to the server it was entered for. Click a deck or section title to fold it. Drag the sheet's right edge to change its width. Long AI summaries no longer get cut off, and a broken AI reply is retried once. Clearer AI error messages. Copy button on AI summaries. Quieter scrollbars. Oversized card headings are capped.
+1.0.3: security fix: code hidden in a card (for example from a shared deck) can no longer run inside IchiSheet, and a saved API key is only ever sent to the server it was entered for. Click a deck or section title to fold it. Drag the sheet's right edge to change its width. Long AI summaries no longer get cut off, and a broken AI reply is retried once. Clearer AI error messages. Copy button on AI summaries. Quieter scrollbars. Oversized card headings are capped.
 
 1.0.2: drag the edge of the deck list to widen it (double-click to reset). Deck search shows each deck's own name first. AI settings has ready-made choices for OpenAI, Gemini, OpenRouter, Ollama and LM Studio. Buttons keep their shape when a theme add-on restyles Anki. PDF export fixed for long cards: no cut-off lists, oversized headings, printed scrollbars or blank pages.
 
-1.0.1: the Sheets logo now shows beside the name in the app. New sample screenshots.
+1.0.1: the IchiSheet logo now shows beside the name in the app. New sample screenshots.
 
 1.0.0: first public release.
 

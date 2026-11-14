@@ -17,6 +17,6 @@
       <g fill="#b9c3de"><rect x="244" y="150" width="100" height="18" rx="9"/><rect x="244" y="214" width="100" height="18" rx="9"/><rect x="244" y="278" width="100" height="18" rx="9"/><rect x="244" y="342" width="72" height="18" rx="9"/></g>
       <path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/>
     </g>
-    <text x="72" y="41" font-size="24" font-weight="600" fill="#16233f">First release: Sheets for Anki</text>
+    <text x="72" y="41" font-size="24" font-weight="600" fill="#16233f">First release: IchiSheet for Anki</text>
   </g>
 </svg>

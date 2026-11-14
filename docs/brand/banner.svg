@@ -9,7 +9,8 @@
     <rect x="231" y="132" width="4" height="246" rx="2" fill="#e3ddcf"/>
     <path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/>
   </g>
-  <text x="344" y="150" font-size="92" font-weight="800" fill="#16233f" letter-spacing="-2">Sheets</text>
+  <text x="344" y="150" font-size="92" font-weight="800" fill="#16233f" letter-spacing="-2">IchiSheet</text>
+  <text x="1228" y="62" text-anchor="end" font-size="26" font-weight="600" fill="#3c4a68">by StarHug</text>
   <text x="348" y="206" font-size="34" font-weight="500" fill="#3c4a68">Read a whole Anki deck as a cheat sheet</text>
   <text x="348" y="252" font-size="24" font-weight="500" fill="#7a8399">Skim what's due · test yourself · print or save as PDF</text>
 </svg>

@@ -13,7 +13,7 @@ def theme(web_content, context):
 gui_hooks.webview_will_set_content.append(theme)
 def start():
     os.makedirs(OUT, exist_ok=True)
-    next(a for a in mw.form.menuTools.actions() if a.text() == "Sheets").trigger()
+    next(a for a in mw.form.menuTools.actions() if a.text() == "IchiSheet").trigger()
     from anki_sheets import dialog
     d = dialog._dialog
     d.setGeometry(0, 0, 1280, 420)

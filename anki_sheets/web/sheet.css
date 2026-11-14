@@ -37,7 +37,7 @@ body.nightMode #app.theme-contrast, body.night_mode #app.theme-contrast {
 #app button, #app input, #app select { font: inherit; color: inherit; }
 #app button { cursor: pointer; }
 /* Theme add-ons restyle every <button> in Anki, often with !important. The :not(#x) on the
-   button rules below only raises their priority so Sheets keeps its own shapes and spacing. */
+   button rules below only raises their priority so IchiSheet keeps its own shapes and spacing. */
 #app button { margin: 0 !important; min-width: 0 !important; min-height: 0 !important; box-shadow: none !important;
   text-shadow: none !important; transform: none !important; background-image: none !important; text-transform: none !important;
   padding: 0 !important; border-radius: 0 !important; color: inherit !important; font-family: inherit !important; font-size: inherit !important; }

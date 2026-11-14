@@ -102,8 +102,8 @@ var Sheets = (function () {
     '<g fill="#1f3fa8"><rect x="144" y="150" width="78" height="18" rx="9"/><rect x="144" y="214" width="78" height="18" rx="9"/><rect x="144" y="278" width="78" height="18" rx="9"/><rect x="144" y="342" width="78" height="18" rx="9"/></g>' +
     '<g fill="#b9c3de"><rect x="244" y="150" width="100" height="18" rx="9"/><rect x="244" y="214" width="100" height="18" rx="9"/><rect x="244" y="278" width="100" height="18" rx="9"/><rect x="244" y="342" width="72" height="18" rx="9"/></g>' +
     '<path d="M384 62 C392 108 404 120 450 128 C404 136 392 148 384 194 C376 148 364 136 318 128 C364 120 376 108 384 62 Z" fill="#ffc94a" stroke="#1f3fa8" stroke-width="12" stroke-linejoin="round"/></svg>';
-  function brand() { return h("h1", { class: "brand" }, h("span", { html: LOGO }), "Sheets"); }
-  function title() { return S.home ? "Sheets" : S.deck ? S.deck.split("::").pop() : "All decks"; }
+  function brand() { return h("h1", { class: "brand" }, h("span", { html: LOGO }), "IchiSheet"); }
+  function title() { return S.home ? "IchiSheet" : S.deck ? S.deck.split("::").pop() : "All decks"; }
   function allRows() {
     var out = [];
     ((S.data && !S.data.__error && S.data.decks) || []).forEach(function (d) { d.groups.forEach(function (g) { g.rows.forEach(function (r) { out.push(r); }); }); });
@@ -365,7 +365,7 @@ var Sheets = (function () {
           onclick: function () { S.viewOpen = false; renderView(); renderBar(); openFields(); } }, "Choose fields…")),
       h("div", { class: "vfoot" },
         h("button", { class: "btn small", type: "button", id: "view-reset",
-          title: "Puts sections (for every deck), spacing, emphasis, theme, column widths, notes and review ticks back to how Sheets starts out. Your ticks, card field choices and AI settings are kept.",
+          title: "Puts sections (for every deck), spacing, emphasis, theme, column widths, notes and review ticks back to how IchiSheet starts out. Your ticks, card field choices and AI settings are kept.",
           onclick: function (e) {
             var b = e.currentTarget;
             if (b.getAttribute("data-armed") !== "1") {   // ask once before wiping the layout choices
@@ -385,10 +385,10 @@ var Sheets = (function () {
         h("button", { class: "btn small", type: "button", id: "refresh",
           title: "Reload decks and cards from Anki", onclick: function () { S.viewOpen = false; init(); } }, "Refresh from Anki")),
       h("div", { class: "vsupport" },
-        h("span", { text: "Sheets" + (S.version ? " " + S.version : "") }),
-        link("rate", "Rate on AnkiWeb", "A thumbs up on AnkiWeb helps other students find Sheets"),
+        h("span", { text: "IchiSheet" + (S.version ? " " + S.version : "") + " by StarHug" }),
+        link("rate", "Rate on AnkiWeb", "A thumbs up on AnkiWeb helps other students find IchiSheet"),
         link("issues", "Report a problem", "Opens the issue page on GitHub"),
-        link("support", "Buy me a coffee", "Sheets is free. A coffee helps keep it maintained")));
+        link("support", "Buy me a coffee", "IchiSheet is free. A coffee helps keep it maintained")));
     function link(to, label, tip) {
       return h("a", { href: "#", title: tip, onclick: function (e) { e.preventDefault(); call("link", { to: to }); } }, label);
     }
@@ -526,7 +526,7 @@ var Sheets = (function () {
       out.push("");
     });
     if (s.gaps && s.gaps.length) out.push("Not covered by the cards: " + gapsText(s) + ".", "");
-    out.push("AI summary of " + plural(s.count || g.rows.length, "card") + ", made with Sheets.");
+    out.push("AI summary of " + plural(s.count || g.rows.length, "card") + ", made with IchiSheet.");
     return out.join("\n");
   }
 
@@ -600,7 +600,7 @@ var Sheets = (function () {
       body);
   }
 
-  // Section and deck titles fold their cards away. Folds last until Sheets is closed.
+  // Section and deck titles fold their cards away. Folds last until IchiSheet is closed.
   function foldBtn(key, label, body) {
     var btn = h("button", { class: "fold", type: "button", title: "Click to fold or unfold this section" },
       h("span", { class: "caret", "aria-hidden": "true" }), h("span", { text: label }));
@@ -665,7 +665,7 @@ var Sheets = (function () {
       onkeydown: function (e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } } },
       h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-labelledby": "f-title" },
         h("h2", { id: "f-title", text: "Card fields" }),
-        h("p", { class: "muted", text: "Each kind of card on this sheet is listed below. Sheets normally shows the first field as the question and the next filled field as the answer. Change that here if it guessed wrong. This only affects how Sheets displays cards; your cards are not changed." }),
+        h("p", { class: "muted", text: "Each kind of card on this sheet is listed below. IchiSheet normally shows the first field as the question and the next filled field as the answer. Change that here if it guessed wrong. This only affects how IchiSheet displays cards; your cards are not changed." }),
         body,
         h("div", { class: "modal-foot" },
           h("button", { class: "btn", type: "button", onclick: close }, "Cancel"),
@@ -705,7 +705,7 @@ var Sheets = (function () {
       put(page, [h("div", { class: "head" }, brand(),
         h("div", { class: "meta", text: "Pick a deck on the left to read it as one page." })),
         S.recovered ? h("div", { class: "notice", id: "recovered" }, h("span", { text: "Last time, “" + S.recovered.split("::").pop() +
-          "” did not finish opening, so Sheets started here instead of reopening it. You can still pick it from the list." })) : null]);
+          "” did not finish opening, so IchiSheet started here instead of reopening it. You can still pick it from the list." })) : null]);
       return;
     }
     if (!d) { put(page, [h("div", { class: "empty", id: "loading", text: "Loading…" })]); return; }
@@ -989,7 +989,7 @@ var Sheets = (function () {
       onkeydown: function (e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } } },
       h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-labelledby": "ai-title" },
         h("h2", { id: "ai-title", text: "AI settings" }),
-        h("p", { class: "muted", text: "AI is optional. With it off, Sheets never goes online. With it on, card text is sent only when you click Condense or send a question, straight from this computer to the provider below. Pictures and audio are never sent." }),
+        h("p", { class: "muted", text: "AI is optional. With it off, IchiSheet never goes online. With it on, card text is sent only when you click Condense or send a question, straight from this computer to the provider below. Pictures and audio are never sent." }),
         h("label", { class: "check" }, enabled, h("span", { text: "Turn on Condense and Ask" })),
         h("label", { class: "field" }, h("span", { text: "Provider" }), provider),
         h("label", { class: "field" }, h("span", { text: "API key" }), key,
@@ -1111,7 +1111,7 @@ var Sheets = (function () {
     var main = app.querySelector(".main");
     if (!main || main.querySelector(".fatal")) return;
     main.insertBefore(h("div", { class: "fatal", role: "alert" },
-      h("span", { text: "Sheets hit a problem (" + msg + "). Your cards are not affected." }),
+      h("span", { text: "IchiSheet hit a problem (" + msg + "). Your cards are not affected." }),
       h("button", { class: "btn small", type: "button", onclick: function () { loading = false; queued = false; init(); } }, "Reload")),
       main.querySelector(".scroll"));
   }

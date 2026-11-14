@@ -12,7 +12,7 @@ def start():
     user = mw.addonManager.getConfig("anki_sheets") or {}
     user["ai"] = dict(user.get("ai") or {}, enabled=True, provider="openai_compatible", base_url="http://127.0.0.1:8765/v1", model="stand-in")
     mw.addonManager.writeConfig("anki_sheets", user)
-    next(a for a in mw.form.menuTools.actions() if a.text() == "Sheets").trigger()
+    next(a for a in mw.form.menuTools.actions() if a.text() == "IchiSheet").trigger()
     from anki_sheets import dialog
     d = dialog._dialog
     d.setGeometry(0, 0, 1280, 800)

@@ -1,4 +1,4 @@
-"""AI features for Sheets: Condense (cheat-sheet block for a section) and Ask.
+"""AI features for IchiSheet: Condense (cheat-sheet block for a section) and Ask.
 
 No GUI imports. Requests go straight from this computer to the provider the
 user configured; nothing here runs unless the user clicks Condense or sends a
